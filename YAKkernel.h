@@ -12,3 +12,8 @@ void YKRun();		 // - Starts actual execution of user code
 void YKScheduler();	 // - Determines the highest priority ready task 
 void YKDispatcher(); // - Begins or resumes execution of the next task 
 
+
+
+//Global Variables extern since they are defined in the c code
+extern int YKCtxSwCount; // - Global variable that tracks context switches 
+extern int YKIdleCount;  // - Global variable incremented by idle task 

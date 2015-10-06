@@ -1,5 +1,6 @@
 #include "YAKkernel.h"
-//Global Variables
+
+
 int YKCtxSwCount; // - Global variable that tracks context switches 
 int YKIdleCount;  // - Global variable incremented by idle task 
 

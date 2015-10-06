@@ -9,7 +9,14 @@ void YKNewTask(void* taskFunc, void* taskStack, int priority);
 void YKRun();
 void YKScheduler();
 void YKDispatcher();
+
+
+
+
+extern int YKCtxSwCount;
+extern int YKIdleCount;
 #line 2 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+
 
 int YKCtxSwCount;
 int YKIdleCount;

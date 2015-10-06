@@ -4,11 +4,11 @@
 	jmp	main	; Jump to program start
 	ALIGN	2
 YKInitialize:
-	; >>>>> Line:	7
+	; >>>>> Line:	8
 	; >>>>> void YKInitialize(){ 
 	jmp	L_YAKkernel_1
 L_YAKkernel_2:
-	; >>>>> Line:	9
+	; >>>>> Line:	10
 	; >>>>> } 
 	mov	sp, bp
 	pop	bp
@@ -19,11 +19,11 @@ L_YAKkernel_1:
 	jmp	L_YAKkernel_2
 	ALIGN	2
 YKEnterMutex:
-	; >>>>> Line:	11
-	; >>>>> void YKEnterMutex(){ 
+	; >>>>> Line:	12
+	; >>>>> void YKEnter 
 	jmp	L_YAKkernel_4
 L_YAKkernel_5:
-	; >>>>> Line:	13
+	; >>>>> Line:	14
 	; >>>>> } 
 	mov	sp, bp
 	pop	bp
@@ -34,11 +34,11 @@ L_YAKkernel_4:
 	jmp	L_YAKkernel_5
 	ALIGN	2
 YKExitMutex:
-	; >>>>> Line:	15
+	; >>>>> Line:	16
 	; >>>>> void YKExitMutex(){ 
 	jmp	L_YAKkernel_7
 L_YAKkernel_8:
-	; >>>>> Line:	17
+	; >>>>> Line:	18
 	; >>>>> } 
 	mov	sp, bp
 	pop	bp
@@ -49,11 +49,11 @@ L_YAKkernel_7:
 	jmp	L_YAKkernel_8
 	ALIGN	2
 YKIdleTask:
-	; >>>>> Line:	19
-	; >>>>> void YKIdleTask() 
+	; >>>>> Line:	20
+	; >>>>> void YKIdleTask(){ 
 	jmp	L_YAKkernel_10
 L_YAKkernel_11:
-	; >>>>> Line:	21
+	; >>>>> Line:	22
 	; >>>>> } 
 	mov	sp, bp
 	pop	bp
@@ -64,11 +64,11 @@ L_YAKkernel_10:
 	jmp	L_YAKkernel_11
 	ALIGN	2
 YKNewTask:
-	; >>>>> Line:	23
+	; >>>>> Line:	24
 	; >>>>> void YKNewTask(void* taskFunc, void* taskStack, int priority){ 
 	jmp	L_YAKkernel_13
 L_YAKkernel_14:
-	; >>>>> Line:	25
+	; >>>>> Line:	26
 	; >>>>> } 
 	mov	sp, bp
 	pop	bp
@@ -79,11 +79,11 @@ L_YAKkernel_13:
 	jmp	L_YAKkernel_14
 	ALIGN	2
 YKRun:
-	; >>>>> Line:	27
+	; >>>>> Line:	28
 	; >>>>> void YKRun(){ 
 	jmp	L_YAKkernel_16
 L_YAKkernel_17:
-	; >>>>> Line:	29
+	; >>>>> Line:	30
 	; >>>>> } 
 	mov	sp, bp
 	pop	bp
@@ -94,11 +94,11 @@ L_YAKkernel_16:
 	jmp	L_YAKkernel_17
 	ALIGN	2
 YKScheduler:
-	; >>>>> Line:	31
+	; >>>>> Line:	32
 	; >>>>> void YKScheduler(){ 
 	jmp	L_YAKkernel_19
 L_YAKkernel_20:
-	; >>>>> Line:	33
+	; >>>>> Line:	34
 	; >>>>> } 
 	mov	sp, bp
 	pop	bp
@@ -109,11 +109,11 @@ L_YAKkernel_19:
 	jmp	L_YAKkernel_20
 	ALIGN	2
 YKDispatcher:
-	; >>>>> Line:	35
+	; >>>>> Line:	36
 	; >>>>> void YKDispatcher(){ 
 	jmp	L_YAKkernel_22
 L_YAKkernel_23:
-	; >>>>> Line:	37
+	; >>>>> Line:	38
 	; >>>>> } 
 	mov	sp, bp
 	pop	bp

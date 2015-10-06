@@ -36,6 +36,12 @@ void YKNewTask(void* taskFunc, void* taskStack, int priority);
 void YKRun();
 void YKScheduler();
 void YKDispatcher();
+
+
+
+
+extern int YKCtxSwCount;
+extern int YKIdleCount;
 #line 9 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/lab4b_app.c"
 
 
