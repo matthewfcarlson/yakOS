@@ -9,20 +9,23 @@ else
 
 endif
 
-lab3.bin:	lab3final.s
-		nasm lab3final.s -o lab3.bin -l lab3.lst
+lab4.bin:	lab4final.s
+		nasm lab4final.s -o lab4.bin -l lab4.lst
 
-lab3final.s:	clib.s ISR.s myinth.s primes.s
-		cat clib.s ISR.s myinth.s primes.s > lab3final.s
+lab4final.s:	clib.s YAKos.s YAKkernel.s app.s
+		cat clib.s YAKos.s YAKkernel.s app.s > lab4final.s
 
-myinth.s:	ISR.c
-		$(COMPILER) ISR.c myinth.i
-		c86 -g myinth.i myinth.s
+#kernel code
+YAKkernel.s:	YAKkernel.c
+		$(COMPILER) YAKkernel.c YAKkernel.i
+		c86 -g YAKkernel.i YAKkernel.s
+		
 
-primes.s:	primes.c
-		$(COMPILER) primes.c primes.i
-		c86 -g primes.i primes.s
+#app code
+app.s:	lab4b_app.c
+		$(COMPILER) lab4b_app.c app.i
+		c86 -g app.i app.s
 
 clean:
-		rm lab3.bin lab3.lst lab3final.s myinth.s myinth.i primes.s primes.i
+		rm lab4.bin lab4.lst lab4final.s YAKkernel.s YAKkernel.i app.i app.s 
 
