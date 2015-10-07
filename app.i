@@ -27,7 +27,7 @@ void exit(unsigned char code);
 void signalEOI(void);
 #line 8 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/lab4b_app.c"
 #line 1 "YAKkernel.h"
-#line 6 "YAKkernel.h"
+#line 8 "YAKkernel.h"
 void YKInitialize();
 void YKEnterMutex();
 void YKExitMutex();

@@ -4,12 +4,44 @@
 	jmp	main	; Jump to program start
 	ALIGN	2
 YKInitialize:
-	; >>>>> Line:	8
+	; >>>>> Line:	35
 	; >>>>> void YKInitialize(){ 
 	jmp	L_YAKkernel_1
 L_YAKkernel_2:
-	; >>>>> Line:	10
-	; >>>>> } 
+	; >>>>> Line:	36
+	; >>>>> YKEnterMutex(); 
+	call	YKEnterMutex
+	; >>>>> Line:	37
+	; >>>>> YKCtxSwCount = 0; 
+	mov	word [YKCtxSwCount], 0
+	; >>>>> Line:	38
+	; >>>>> YKISRDepth = 0; 
+	mov	word [YKISRDepth], 0
+	; >>>>> Line:	39
+	; >>>>> YKIdleCount = 0; 
+	mov	word [YKIdleCount], 0
+	; >>>>> Line:	40
+	; >>>>> YKReadyTasks =  0 ; 
+	mov	word [YKReadyTasks], 0
+	; >>>>> Line:	41
+	; >>>>> YKSuspendedTasks =  0 ; 
+	mov	word [YKSuspendedTasks], 0
+	; >>>>> Line:	42
+	; >>>>> YKAllTasks =  0 ; 
+	mov	word [YKAllTasks], 0
+	; >>>>> Line:	46
+	; >>>>> YKNewTask(YKIdleTask, &IdleStack[ 100 ],255); 
+	mov	ax, 255
+	push	ax
+	mov	ax, (IdleStack+200)
+	push	ax
+	mov	ax, YKIdleTask
+	push	ax
+	call	YKNewTask
+	add	sp, 6
+	; >>>>> Line:	47
+	; >>>>> asm("sti"); 
+	sti
 	mov	sp, bp
 	pop	bp
 	ret
@@ -19,12 +51,13 @@ L_YAKkernel_1:
 	jmp	L_YAKkernel_2
 	ALIGN	2
 YKEnterMutex:
-	; >>>>> Line:	12
-	; >>>>> void YKEnter 
+	; >>>>> Line:	52
+	; >>>>> void YKEnterMutex(){ 
 	jmp	L_YAKkernel_4
 L_YAKkernel_5:
-	; >>>>> Line:	14
-	; >>>>> } 
+	; >>>>> Line:	53
+	; >>>>> asm("cli"); 
+	cli
 	mov	sp, bp
 	pop	bp
 	ret
@@ -34,12 +67,13 @@ L_YAKkernel_4:
 	jmp	L_YAKkernel_5
 	ALIGN	2
 YKExitMutex:
-	; >>>>> Line:	16
-	; >>>>> void YKExitMutex(){ 
+	; >>>>> Line:	57
+	; >>>>> void 
 	jmp	L_YAKkernel_7
 L_YAKkernel_8:
-	; >>>>> Line:	18
-	; >>>>> } 
+	; >>>>> Line:	58
+	; >>>>> asm("sti"); 
+	sti
 	mov	sp, bp
 	pop	bp
 	ret
@@ -49,11 +83,11 @@ L_YAKkernel_7:
 	jmp	L_YAKkernel_8
 	ALIGN	2
 YKIdleTask:
-	; >>>>> Line:	20
+	; >>>>> Line:	62
 	; >>>>> void YKIdleTask(){ 
 	jmp	L_YAKkernel_10
 L_YAKkernel_11:
-	; >>>>> Line:	22
+	; >>>>> Line:	64
 	; >>>>> } 
 	mov	sp, bp
 	pop	bp
@@ -64,11 +98,11 @@ L_YAKkernel_10:
 	jmp	L_YAKkernel_11
 	ALIGN	2
 YKNewTask:
-	; >>>>> Line:	24
+	; >>>>> Line:	66
 	; >>>>> void YKNewTask(void* taskFunc, void* taskStack, int priority){ 
 	jmp	L_YAKkernel_13
 L_YAKkernel_14:
-	; >>>>> Line:	26
+	; >>>>> Line:	68
 	; >>>>> } 
 	mov	sp, bp
 	pop	bp
@@ -79,11 +113,11 @@ L_YAKkernel_13:
 	jmp	L_YAKkernel_14
 	ALIGN	2
 YKRun:
-	; >>>>> Line:	28
+	; >>>>> Line:	70
 	; >>>>> void YKRun(){ 
 	jmp	L_YAKkernel_16
 L_YAKkernel_17:
-	; >>>>> Line:	30
+	; >>>>> Line:	72
 	; >>>>> } 
 	mov	sp, bp
 	pop	bp
@@ -94,11 +128,11 @@ L_YAKkernel_16:
 	jmp	L_YAKkernel_17
 	ALIGN	2
 YKScheduler:
-	; >>>>> Line:	32
+	; >>>>> Line:	74
 	; >>>>> void YKScheduler(){ 
 	jmp	L_YAKkernel_19
 L_YAKkernel_20:
-	; >>>>> Line:	34
+	; >>>>> Line:	76
 	; >>>>> } 
 	mov	sp, bp
 	pop	bp
@@ -109,11 +143,11 @@ L_YAKkernel_19:
 	jmp	L_YAKkernel_20
 	ALIGN	2
 YKDispatcher:
-	; >>>>> Line:	36
+	; >>>>> Line:	78
 	; >>>>> void YKDispatcher(){ 
 	jmp	L_YAKkernel_22
 L_YAKkernel_23:
-	; >>>>> Line:	38
+	; >>>>> Line:	80
 	; >>>>> } 
 	mov	sp, bp
 	pop	bp
@@ -126,4 +160,16 @@ L_YAKkernel_22:
 YKCtxSwCount:
 	TIMES	2 db 0
 YKIdleCount:
+	TIMES	2 db 0
+YKReadyTasks:
+	TIMES	2 db 0
+YKSuspendedTasks:
+	TIMES	2 db 0
+YKAllTasks:
+	TIMES	2 db 0
+YKTCBs:
+	TIMES	60 db 0
+IdleStack:
+	TIMES	200 db 0
+YKISRDepth:
 	TIMES	2 db 0
