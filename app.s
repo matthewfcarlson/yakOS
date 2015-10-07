@@ -84,7 +84,7 @@ L_app_11:
 	call	YKNewTask
 	add	sp, 6
 	; >>>>> Line:	40
-	; >>>>> printString("Creating task C...\n"); 
+	; >>>>> printString("Creati 
 	mov	ax, L_app_8
 	push	ax
 	call	printString
@@ -100,7 +100,7 @@ L_app_11:
 	call	YKNewTask
 	add	sp, 6
 	; >>>>> Line:	43
-	; >>>>> printString("Tas 
+	; >>>>> printString("Task A is still running! Oh no! Task A was supposed to stop.\n"); 
 	mov	ax, L_app_9
 	push	ax
 	call	printString
@@ -179,7 +179,7 @@ L_app_21:
 	call	printUInt
 	add	sp, 2
 	; >>>>> Line:	64
-	; >>>>> printString(" context switches!\n"); 
+	; >>>>> printString(" contex 
 	mov	ax, L_app_18
 	push	ax
 	call	printString
@@ -195,7 +195,7 @@ L_app_22:
 	call	printString
 	add	sp, 2
 	; >>>>> Line:	69
-	; >>>>>  
+	; >>>>> for(count = 0; count < 5000; count++); 
 	mov	word [bp-2], 0
 	jmp	L_app_26
 L_app_25:

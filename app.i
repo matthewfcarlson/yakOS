@@ -36,6 +36,10 @@ void YKNewTask(void* taskFunc, void* taskStack, int priority);
 void YKRun();
 void YKScheduler();
 void YKDispatcher();
+void YKEnterISR();
+void YKExitISR();
+void YKTickHandler();
+void printTCB(void* ptcb);
 
 
 
