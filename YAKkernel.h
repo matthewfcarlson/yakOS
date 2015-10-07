@@ -5,6 +5,9 @@ The YAK kernel functions
 #define MAX_TASKS 5
 #define DEFAULTSTACKSIZE 100
 #define DEFAULTFLAGS 64
+#define STATE_RUNNING   1
+#define STATE_DELAYED   2
+#define STATE_SUSPENDED 3
 
 void YKInitialize(); // - Initializes all required kernel data structures 
 void YKEnterMutex(); // - Disables interrupts 

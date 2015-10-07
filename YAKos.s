@@ -1,8 +1,8 @@
 TickISR:
 	cli				;this is atomic so no more interrupts for a bit
-	;save context 
+	
+	;TODO save the SP to the current task TCB
 	;TODO: create a function that pushes and pops context in the same way
-	pushf 			;pushes flags
 	push ax
 	push bx
 	push dx
@@ -13,27 +13,51 @@ TickISR:
 	push ds
 	sti;
 	
+	
+	
 	;call the tick handler to handle the interrupt
 	call YKTickHandler 
 	
 	cli
+					; Reset the PIC before we pop registers
+	mov	al, 0x20	; Load nonspecific EOI value (0x20) into register al
+	out	0x20, al	; Write EOI to PIC (port 0x20)
+	
 	pop ds
 	pop es
 	pop bp
 	pop di
 	pop si
 	pop dx
-	pop bx	
-	mov	al, 0x20	; Load nonspecific EOI value (0x20) into register al
-	out	0x20, al	; Write EOI to PIC (port 0x20)
-	pop ax;
-	popf			; pops flags
+	pop bx
+	pop ax	
 	
 	sti 	;return interrupts back on
 	iret 	;return from interrupt
 	
 ResetISR:
 	jmp main;
+	
+KeyboardISR:
+	iret;
+	
+SwitchTask:
+	cli				;this is atomic so no more interrupts for a bit
+	
+	;TODO save the SP to the current task TCB
+	;TODO: create a function that pushes and pops context in the same way
+	push ax
+	push bx
+	push dx
+	push si
+	push di
+	push bp
+	push es
+	push ds
+	;Save the current SP on the TCB
+	
+	;Call the scheduler
+	call Scheduler;
 	
 
 SwitchContext:

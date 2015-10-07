@@ -1,6 +1,6 @@
 #include "YAKkernel.h"
 #include "clib.h"
-/* TCB stuff */
+/* ----------------- TCB stuff ----------------- */
 typedef struct taskblock *TCBp;
 /* the TCB struct definition */
 typedef struct taskblock
@@ -13,7 +13,7 @@ typedef struct taskblock
     TCBp prev;		/* backward ptr for dbl linked list */
 }  TCB;
 
-
+/* ----------------- TCB lisks ----------------- */
 TCBp YKCurrentTask;		/* the currently running task */
 TCBp YKReadyTasks;		/* a list of TCBs of all ready tasks in order of decreasing priority */ 
 TCBp YKSuspendedTasks;	/* tasks delayed or suspended */
@@ -24,19 +24,22 @@ int  YKTCBMallocIndex;	/* the index of the current empty TCB in the array */
 //IDLE TASK stuff
 int IdleStack[DEFAULTSTACKSIZE];
 
-/* Global Variables */
+/* ----------------- Global Variables ----------------- */
 int YKCtxSwCount; // - Global variable that tracks context switches 
 int YKIdleCount;  // - Global variable incremented by idle task 
 int YKISRDepth;
 int YKIsRunning;
-/* Private Kernel functions */
+/* ----------------- Private Kernel function declerations -----------------  */
 void YKAddToSuspendedList(TCBp task);
 void YKAddToReadyList(TCBp task);
 void YKRemoveFromList(TCBp task);
 
+/* ----------------- Public kernel functions -----------------  */
 // - Initializes all required kernel data structures 
 void YKInitialize(){
 	YKEnterMutex();
+	
+	//Set things to zero or null
 	YKCtxSwCount = 0;
 	YKISRDepth = 0;
 	YKIdleCount = 0;
@@ -102,6 +105,7 @@ void YKNewTask(void* taskFunc, void* taskStack, int priority){
 	
 	//printString("\nBP at 0x");
 	//printWord((int)taskStack);
+	
 	//Create the stack	
 	//flags, CS, IP (the address of the function passed in)
 	*(newStackSP) = DEFAULTFLAGS; //the default flags
@@ -109,17 +113,18 @@ void YKNewTask(void* taskFunc, void* taskStack, int priority){
 	*(newStackSP) = 0; //CS
 	newStackSP -= 1;
 	*(newStackSP) = (int)taskFunc; //function pointer
-	newStackSP -= 8;
+	newStackSP -= 8; //we push 8 registers on the stack
 	//printString("\nSP at 0x");
 	//printWord((int)newStackSP);
-	newTask->stackPtr = (int)newStackSP; //we just add the space for the rest of the functions
+	newTask->stackPtr = (int*)newStackSP; //we just add the space for the rest of the functions
 	
 
 	//Initalize the TCB
 	newTask->priority = priority;
 	newTask->next = NULL;	//links to the next task
 	newTask->prev = NULL; 
-	
+	newTask->delayTicks = 0;
+	newTask->state = 1;
 	//Add to the ready list
 	YKAddToReadyList(newTask);
 	if (YKIsRunning)
@@ -155,7 +160,7 @@ void YKDispatcher(){
 	SwitchContext();
 }
 
-/* ISR handlers */
+/* ----------------- ISR handlers ----------------- */
 //Handles the tick ISR
 void YKTickHandler(){
 	static int tickCount = 0;
@@ -179,6 +184,7 @@ void YKTickHandler(){
 	
 }
 
+/* ----------------- TCB list functions ----------------- */
 //Adds a task to the ready list
 void YKAddToReadyList(TCBp newTask){
 	int priority = newTask->priority;
@@ -217,7 +223,7 @@ void YKRemoveFromList(TCBp task){
 	}
 }
 
-/* Helper functions TCB structure */
+/* ----------------- Helper functions TCB structure ----------------- */
 void printTCB(void* ptcb){
 	TCBp tcb = (TCBp) ptcb;
 	
