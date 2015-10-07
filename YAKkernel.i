@@ -86,13 +86,13 @@ void YKInitialize(){
 	YKReadyTasks =  0 ;
 	YKSuspendedTasks =  0 ;
 	YKAllTasks =  0 ;
+	YKCurrentTask =  0 ;
 	YKTCBMallocIndex = 0;
 
 
 
 	YKNewTask(YKIdleTask, &IdleStack[ 100 ],255);
-	asm("sti");
-
+	YKExitMutex();
 }
 
 
@@ -131,18 +131,43 @@ void YKExitISR(){
 void YKIdleTask(){
 	int i = 0;
 	while(1){
-		for (i = 0; i< 50000;i++);
+		for (i = 0; i< 5000; i++);
 		++YKIdleCount;
 	}
 
 }
 
 void YKNewTask(void* taskFunc, void* taskStack, int priority){
+	TCBp taskListPtr = YKReadyTasks;
 	TCBp newTask = &YKTCBs[YKTCBMallocIndex];
+	++YKTCBMallocIndex;
+
+
+	newTask->stackPtr = taskStack;
+
+
 	newTask->priority = priority;
+	newTask->next =  0 ;
+
 	printTCB(newTask);
 
-	++YKTCBMallocIndex;
+
+	if (YKReadyTasks ==  0 )
+		YKReadyTasks = newTask;
+
+	else if (YKReadyTasks->priority > priority){
+		newTask->next = YKReadyTasks;
+		YKReadyTasks = newTask;
+	}
+
+	else{
+		while (taskListPtr->next !=  0  && taskListPtr->next->priority > priority){
+			taskListPtr = taskListPtr -> next;
+		}
+		newTask-> next = taskListPtr -> next;
+		taskListPtr->next = newTask;
+	}
+
 }
 
 void YKRun(){
@@ -152,23 +177,51 @@ void YKRun(){
 }
 
 void YKScheduler(){
+	printString("Scheduler\n");
+	printTCB(YKReadyTasks);
 
+	if (YKReadyTasks != YKCurrentTask){
+
+		YKCurrentTask = YKReadyTasks;
+		YKDispatcher();
+	}
 }
 
 
 void YKDispatcher(){
 
+	printString("DISPATCHED \n");
 }
 
 
 void YKTickHandler(){
-	printString("Tick\n");
+	static int tickCount = 0;
+	TCBp currTCB = YKSuspendedTasks;
+
+	++tickCount;
+	printString("\nTick ");
+	printInt(tickCount);
+	printString("\n");
+
+	while (currTCB !=  0 ){
+		--currTCB->delayTicks;
+		currTCB = currTCB->next;
+	}
+
 }
 
 
 void printTCB(void* ptcb){
 	TCBp tcb = (TCBp) ptcb;
-	printString("(");
+	printString("TCB(");
 	printInt(tcb->priority);
-	printString(") ");
+	printString("/");
+	printInt(tcb->delayTicks);
+	printString(")");
+	if (tcb->next !=  0 ){
+		printString("->");
+		printTCB(tcb->next);
+	}
+	else
+		printString(" \n");
 }

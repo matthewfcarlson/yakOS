@@ -40,13 +40,13 @@ void YKInitialize(){
 	YKReadyTasks = NULL;
 	YKSuspendedTasks = NULL;
 	YKAllTasks = NULL;
+	YKCurrentTask = NULL;
 	YKTCBMallocIndex = 0;
 	
 	
 	//create idle task
 	YKNewTask(YKIdleTask, &IdleStack[DEFAULTSTACKSIZE],255); //prority is negative -1 or rolled over to max
-	asm("sti");
-	
+	YKExitMutex();
 }
 
 // - Disables interrupts 
@@ -84,19 +84,44 @@ void YKExitISR(){
 // - Kernel's idle task 
 void YKIdleTask(){
 	int i = 0;
-	while(1){
-		for (i = 0; i< 50000;i++);
+	while(1){ //Just spin in idle and count to 5000
+		for (i = 0; i< 5000; i++);
 		++YKIdleCount;
 	}
 	
 }   
 // - Creates a new task 
 void YKNewTask(void* taskFunc, void* taskStack, int priority){
+	TCBp taskListPtr = YKReadyTasks;
 	TCBp newTask = &YKTCBs[YKTCBMallocIndex];
+	++YKTCBMallocIndex;
+	
+	//Create the stack
+	newTask->stackPtr = taskStack;
+	
+	//Initalize the TCB
 	newTask->priority = priority;
+	newTask->next = NULL;
+	
 	printTCB(newTask);
 	
-	++YKTCBMallocIndex;
+	//create the list
+	if (YKReadyTasks == NULL)
+		YKReadyTasks = newTask;
+	//append to the list
+	else if (YKReadyTasks->priority > priority){
+		newTask->next = YKReadyTasks;
+		YKReadyTasks = newTask;
+	}
+	//stick it somewhere in there
+	else{
+		while (taskListPtr->next != NULL && taskListPtr->next->priority > priority){
+			taskListPtr = taskListPtr -> next;
+		}
+		newTask-> next = taskListPtr -> next;
+		taskListPtr->next = newTask;
+	}
+	
 }
 // - Starts actual execution of user code 	
 void YKRun(){
@@ -106,23 +131,59 @@ void YKRun(){
 }
 // - Determines the highest priority ready task 
 void YKScheduler(){
-	
+	printString("Scheduler\n");
+	printTCB(YKReadyTasks);
+	//if the new task to run is different
+	if (YKReadyTasks != YKCurrentTask){
+		//Load the new task
+		YKCurrentTask = YKReadyTasks;
+		YKDispatcher();
+	}
 }
 
 // - Begins or resumes execution of the next task
 void YKDispatcher(){
-	
+	//we are dispatching!
+	printString("DISPATCHED");
+	printString("\n");
+	//don’t need to save AX ‘cause we ain’t coming back
+	asm("mov ax, [YKCurrentTask]") 
+	//restore SP, BP
+	asm(mov sp, [ax]) //wherever SP is stored in the TCB
+	RestoreContext();
+	asm('iret');
 }
 
 /* ISR handlers */
 void YKTickHandler(){
-	printString("Tick\n");
+	static int tickCount = 0;
+	TCBp currTCB = YKSuspendedTasks;
+	
+	++tickCount;
+	printString("\nTick ");
+	printInt(tickCount);
+	printString("\n");
+	//Decrement the wait list
+	while (currTCB != NULL){
+		--currTCB->delayTicks;
+		currTCB = currTCB->next;
+	}
+	
 }
 
-/* Helper functions */
+/* Helper functions TCB structure
 void printTCB(void* ptcb){
 	TCBp tcb = (TCBp) ptcb;
+	
 	printString("TCB(");
 	printInt(tcb->priority);
-	printString(") \n");
+	printString("/");
+	printInt(tcb->delayTicks);
+	printString(")");
+	if (tcb->next != NULL){
+		printString("->");
+		printTCB(tcb->next);
+	}
+	else
+		printString(" \n");
 }
