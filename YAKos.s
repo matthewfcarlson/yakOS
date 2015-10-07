@@ -1,6 +1,15 @@
 TickISR:
+	cli		;this is atomic so no more interrupts for a bit
+	push ax
+	push bx
+	push dx
+	push si
+	push di
+	push bp
+	push es
+	push ds
+	sti;
 	
-	call StoreContext;
 	call YKTickHandler ;call the tick handler
 	
 	cli
@@ -19,17 +28,20 @@ TickISR:
 	iret 	;return from interrupt
 ResetISR:
 	jmp main;
-		
-RestoreContext:
-	cli		;this is atomic so no more interrupts for a bit
-	push ax
-	push bx
-	push dx
-	push si
-	push di
-	push bp
-	push es
-	push ds
-	sti 
-	ret
-StoreContext:
+
+SwitchContext:
+	;we put the address we need in a local variable
+	mov sp, [bp-2]
+	mov bp, sp
+	sub bp, 18
+	;next pop all the registers
+	pop ds
+	pop es
+	pop bp
+	pop di
+	pop si
+	pop dx
+	pop bx
+	pop ax
+	iret;
+	

@@ -1,6 +1,6 @@
 #line 1 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
 #line 1 "YAKkernel.h"
-#line 8 "YAKkernel.h"
+#line 9 "YAKkernel.h"
 void YKInitialize();
 void YKEnterMutex();
 void YKExitMutex();
@@ -13,6 +13,7 @@ void YKEnterISR();
 void YKExitISR();
 void YKTickHandler();
 void printTCB(void* ptcb);
+void SwitchContext();
 
 
 
@@ -140,16 +141,24 @@ void YKIdleTask(){
 void YKNewTask(void* taskFunc, void* taskStack, int priority){
 	TCBp taskListPtr = YKReadyTasks;
 	TCBp newTask = &YKTCBs[YKTCBMallocIndex];
+	int* newStackSP = taskStack;
 	++YKTCBMallocIndex;
 
 
+
 	newTask->stackPtr = taskStack;
+	*(newStackSP) =  64 ;
+	newStackSP -= 2;
+	*(newStackSP) = 0;
+	newStackSP -= 2;
+	*(newStackSP) = taskFunc;
+	newTask->stackPtr-=18;
+
+
 
 
 	newTask->priority = priority;
 	newTask->next =  0 ;
-
-	printTCB(newTask);
 
 
 	if (YKReadyTasks ==  0 )
@@ -189,8 +198,9 @@ void YKScheduler(){
 
 
 void YKDispatcher(){
+	void* newSP = YKCurrentTask->stackPtr;
 
-	printString("DISPATCHED \n");
+	SwitchContext();
 }
 
 
@@ -213,10 +223,13 @@ void YKTickHandler(){
 
 void printTCB(void* ptcb){
 	TCBp tcb = (TCBp) ptcb;
+
 	printString("TCB(");
 	printInt(tcb->priority);
 	printString("/");
 	printInt(tcb->delayTicks);
+	printString(":");
+	printInt(tcb->stackPtr);
 	printString(")");
 	if (tcb->next !=  0 ){
 		printString("->");

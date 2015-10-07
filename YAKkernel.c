@@ -94,16 +94,24 @@ void YKIdleTask(){
 void YKNewTask(void* taskFunc, void* taskStack, int priority){
 	TCBp taskListPtr = YKReadyTasks;
 	TCBp newTask = &YKTCBs[YKTCBMallocIndex];
+	int* newStackSP = taskStack;
 	++YKTCBMallocIndex;
 	
 	//Create the stack
+	
 	newTask->stackPtr = taskStack;
+	*(newStackSP) = DEFAULTFLAGS;
+	newStackSP -= 2;
+	*(newStackSP) = 0; //CS
+	newStackSP -= 2;
+	*(newStackSP) = taskFunc; //function
+	newTask->stackPtr-=18;
+	//flags, CS, IP (the address of the function passed in)
+
 	
 	//Initalize the TCB
 	newTask->priority = priority;
 	newTask->next = NULL;
-	
-	printTCB(newTask);
 	
 	//create the list
 	if (YKReadyTasks == NULL)
@@ -143,15 +151,9 @@ void YKScheduler(){
 
 // - Begins or resumes execution of the next task
 void YKDispatcher(){
+	void* newSP = YKCurrentTask->stackPtr;
 	//we are dispatching!
-	printString("DISPATCHED");
-	printString("\n");
-	//don’t need to save AX ‘cause we ain’t coming back
-	asm("mov ax, [YKCurrentTask]") 
-	//restore SP, BP
-	asm(mov sp, [ax]) //wherever SP is stored in the TCB
-	RestoreContext();
-	asm('iret');
+	SwitchContext();
 }
 
 /* ISR handlers */
@@ -171,7 +173,7 @@ void YKTickHandler(){
 	
 }
 
-/* Helper functions TCB structure
+/* Helper functions TCB structure */
 void printTCB(void* ptcb){
 	TCBp tcb = (TCBp) ptcb;
 	
@@ -179,6 +181,8 @@ void printTCB(void* ptcb){
 	printInt(tcb->priority);
 	printString("/");
 	printInt(tcb->delayTicks);
+	printString(":");
+	printInt(tcb->stackPtr);
 	printString(")");
 	if (tcb->next != NULL){
 		printString("->");

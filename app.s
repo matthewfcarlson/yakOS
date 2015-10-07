@@ -84,7 +84,7 @@ L_app_11:
 	call	YKNewTask
 	add	sp, 6
 	; >>>>> Line:	40
-	; >>>>> printString("Creati 
+	; >>>>>  
 	mov	ax, L_app_8
 	push	ax
 	call	printString
@@ -179,7 +179,7 @@ L_app_21:
 	call	printUInt
 	add	sp, 2
 	; >>>>> Line:	64
-	; >>>>> printString(" contex 
+	; >>>>>  
 	mov	ax, L_app_18
 	push	ax
 	call	printString

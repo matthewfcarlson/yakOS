@@ -4,6 +4,7 @@ The YAK kernel functions
 #define NULL 0
 #define MAX_TASKS 5
 #define DEFAULTSTACKSIZE 100
+#define DEFAULTFLAGS 64
 
 void YKInitialize(); // - Initializes all required kernel data structures 
 void YKEnterMutex(); // - Disables interrupts 
@@ -17,6 +18,7 @@ void YKEnterISR();
 void YKExitISR(); 
 void YKTickHandler();
 void printTCB(void* ptcb);
+void SwitchContext();
 
 
 
