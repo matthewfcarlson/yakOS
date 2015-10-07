@@ -51,6 +51,7 @@ SwitchContext:
 	pop dx
 	pop bx
 	pop ax
+RestoreContext:
 	;This will pop the next three registers: IP, CS, and flags
 	iret;
 	

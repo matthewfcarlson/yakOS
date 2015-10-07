@@ -28,7 +28,7 @@ int IdleStack[DEFAULTSTACKSIZE];
 int YKCtxSwCount; // - Global variable that tracks context switches 
 int YKIdleCount;  // - Global variable incremented by idle task 
 int YKISRDepth;
-
+int YKIsRunning;
 /* Private Kernel functions */
 void YKAddToSuspendedList(TCBp task);
 void YKAddToReadyList(TCBp task);
@@ -45,7 +45,7 @@ void YKInitialize(){
 	YKAllTasks = NULL;
 	YKCurrentTask = NULL;
 	YKTCBMallocIndex = 0;
-	
+	YKIsRunning = 0;	
 	
 	//create idle task
 	YKNewTask(YKIdleTask, &IdleStack[DEFAULTSTACKSIZE],255); //prority is negative -1 or rolled over to max
@@ -99,17 +99,20 @@ void YKNewTask(void* taskFunc, void* taskStack, int priority){
 	int* newStackSP = taskStack;
 	++YKTCBMallocIndex;
 	
-	//TODO: fix this as this is broken
 	
+	//printString("\nBP at 0x");
+	//printWord((int)taskStack);
 	//Create the stack	
 	//flags, CS, IP (the address of the function passed in)
 	*(newStackSP) = DEFAULTFLAGS; //the default flags
-	newStackSP -= 2;
+	newStackSP -= 1;
 	*(newStackSP) = 0; //CS
-	newStackSP -= 2;
+	newStackSP -= 1;
 	*(newStackSP) = (int)taskFunc; //function pointer
-	taskStack -= 18;
-	newTask->stackPtr = (int)taskStack; //we just add the space for the rest of the functions
+	newStackSP -= 8;
+	//printString("\nSP at 0x");
+	//printWord((int)newStackSP);
+	newTask->stackPtr = (int)newStackSP; //we just add the space for the rest of the functions
 	
 
 	//Initalize the TCB
@@ -119,24 +122,30 @@ void YKNewTask(void* taskFunc, void* taskStack, int priority){
 	
 	//Add to the ready list
 	YKAddToReadyList(newTask);
-	
+	if (YKIsRunning)
+		YKScheduler();
 }
 // - Starts actual execution of user code 	
 void YKRun(){
 	printString("Starting Yak OS (c) 2015\n");
+	YKIsRunning = 1;
 	YKScheduler();
+	
 	
 }
 // - Determines the highest priority ready task 
 void YKScheduler(){
+	YKEnterMutex();
 	printString("Scheduler\n");
 	printTCB(YKReadyTasks);
 	//if the new task to run is different
 	if (YKReadyTasks != YKCurrentTask){
 		//Load the new task
 		YKCurrentTask = YKReadyTasks;
+		++YKCtxSwCount;
 		YKDispatcher();
 	}
+	YKExitMutex();
 }
 
 // - Begins or resumes execution of the next task

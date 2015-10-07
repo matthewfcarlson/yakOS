@@ -75,7 +75,7 @@ int IdleStack[ 100 ];
 int YKCtxSwCount;
 int YKIdleCount;
 int YKISRDepth;
-
+int YKIsRunning;
 
 void YKAddToSuspendedList(TCBp task);
 void YKAddToReadyList(TCBp task);
@@ -92,7 +92,7 @@ void YKInitialize(){
 	YKAllTasks =  0 ;
 	YKCurrentTask =  0 ;
 	YKTCBMallocIndex = 0;
-
+	YKIsRunning = 0;
 
 
 	YKNewTask(YKIdleTask, &IdleStack[ 100 ],255);
@@ -147,16 +147,19 @@ void YKNewTask(void* taskFunc, void* taskStack, int priority){
 	++YKTCBMallocIndex;
 
 
-
+	printString("\nBP at 0x");
+	printWord((int)taskStack);
 
 
 	*(newStackSP) =  64 ;
-	newStackSP -= 2;
+	newStackSP -= 1;
 	*(newStackSP) = 0;
-	newStackSP -= 2;
+	newStackSP -= 1;
 	*(newStackSP) = (int)taskFunc;
-	taskStack -= 18;
-	newTask->stackPtr = (int)taskStack;
+	newStackSP -= 8;
+	printString("\nSP at 0x");
+	printWord((int)newStackSP);
+	newTask->stackPtr = (int)newStackSP;
 
 
 
@@ -166,24 +169,30 @@ void YKNewTask(void* taskFunc, void* taskStack, int priority){
 
 
 	YKAddToReadyList(newTask);
-
+	if (YKIsRunning)
+		YKScheduler();
 }
 
 void YKRun(){
 	printString("Starting Yak OS (c) 2015\n");
+	YKIsRunning = 1;
 	YKScheduler();
+
 
 }
 
 void YKScheduler(){
+	YKEnterMutex();
 	printString("Scheduler\n");
 	printTCB(YKReadyTasks);
 
 	if (YKReadyTasks != YKCurrentTask){
 
 		YKCurrentTask = YKReadyTasks;
+		++YKCtxSwCount;
 		YKDispatcher();
 	}
+	YKExitMutex();
 }
 
 
