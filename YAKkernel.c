@@ -8,9 +8,9 @@ typedef struct taskblock
     void* stackPtr;		/* pointer to current top of stack */
     int state;			/* current state */
     int priority;		/* current priority */
-    int delayTicks;			/* #ticks yet to wait */
-    TCBp next;		/* forward ptr for dbl linked list */
-    //TCBptr prev;		/* backward ptr for dbl linked list */
+    int delayTicks;		/* #ticks yet to wait */
+    TCBp next;			/* forward ptr for dbl linked list */
+    TCBptr prev;		/* backward ptr for dbl linked list */
 }  TCB;
 
 
@@ -74,7 +74,7 @@ void YKExitISR(){
 	
 	//check if we need to run the scheduler
 	if (YKISRDepth == 0){
-		//run scheduler
+		//run scheduler since we are call depth 0
 		YKScheduler();
 	}
 	
@@ -97,38 +97,24 @@ void YKNewTask(void* taskFunc, void* taskStack, int priority){
 	int* newStackSP = taskStack;
 	++YKTCBMallocIndex;
 	
-	//Create the stack
-	
-	newTask->stackPtr = taskStack;
-	*(newStackSP) = DEFAULTFLAGS;
+	//Create the stack	
+	//flags, CS, IP (the address of the function passed in)
+	*(newStackSP) = DEFAULTFLAGS; //the default flags
 	newStackSP -= 2;
 	*(newStackSP) = 0; //CS
 	newStackSP -= 2;
-	*(newStackSP) = taskFunc; //function
-	newTask->stackPtr-=18;
-	//flags, CS, IP (the address of the function passed in)
-
+	*(newStackSP) = taskFunc; //function pointer
 	
+	newTask->stackPtr=taskStack - 18; //we just add the space for the rest of the functions
+	
+
 	//Initalize the TCB
 	newTask->priority = priority;
-	newTask->next = NULL;
+	newTask->next = NULL;	//links to the next task
+	newTask->prev = NULL; 
 	
-	//create the list
-	if (YKReadyTasks == NULL)
-		YKReadyTasks = newTask;
-	//append to the list
-	else if (YKReadyTasks->priority > priority){
-		newTask->next = YKReadyTasks;
-		YKReadyTasks = newTask;
-	}
-	//stick it somewhere in there
-	else{
-		while (taskListPtr->next != NULL && taskListPtr->next->priority > priority){
-			taskListPtr = taskListPtr -> next;
-		}
-		newTask-> next = taskListPtr -> next;
-		taskListPtr->next = newTask;
-	}
+	//Add to the ready list
+	YKAddToReadyList(newTask);
 	
 }
 // - Starts actual execution of user code 	
@@ -152,11 +138,12 @@ void YKScheduler(){
 // - Begins or resumes execution of the next task
 void YKDispatcher(){
 	void* newSP = YKCurrentTask->stackPtr;
-	//we are dispatching!
+	//call the assembly to dispatch the function
 	SwitchContext();
 }
 
 /* ISR handlers */
+//Handles the tick ISR
 void YKTickHandler(){
 	static int tickCount = 0;
 	TCBp currTCB = YKSuspendedTasks;
@@ -168,9 +155,49 @@ void YKTickHandler(){
 	//Decrement the wait list
 	while (currTCB != NULL){
 		--currTCB->delayTicks;
+		//check if it needs to go to the readyList
+		if (currTCB->delayTicks == 0){
+			//remove it from the 
+			YKRemoveFromList(currTCB);
+			YKAddToReadyList(currTCB);
+		}
 		currTCB = currTCB->next;
 	}
 	
+}
+//Adds a task to the ready list
+void YKAddToReadyList(TCBp task){
+	//create the list if it's empty
+	if (YKReadyTasks == NULL)
+		YKReadyTasks = newTask;
+	//append to the list
+	else if (YKReadyTasks->priority > priority){
+		newTask->next = YKReadyTasks;
+		YKReadyTasks = newTask;
+	}
+	//stick it somewhere in there
+	else{
+		//TODO: optimize this somehow and make easier to understand
+		while (taskListPtr->next != NULL && taskListPtr->next->priority > priority){
+			taskListPtr = taskListPtr -> next;
+		}
+		//TODO: use prev as well as next to make double linked list
+		newTask-> next = taskListPtr -> next;
+		taskListPtr->next = newTask;
+	}
+}
+//Adds a task to the suspeneded list
+void YKAddToSuspendedList(TCBp task){
+	
+}
+//Removes it from whatever list it's in
+void YKRemoveFromList(TCBp task){
+	if (task->next != NULL){
+		task->next->prev = task->prev;
+	}
+	if (task->prev != NULL){
+		task->prev->next = task->next;
+	}
 }
 
 /* Helper functions TCB structure */
