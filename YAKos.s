@@ -57,7 +57,7 @@ SwitchTask:
 	;Save the current SP on the TCB
 	
 	;Call the scheduler
-	call Scheduler;
+	call YKScheduler;
 	
 
 SwitchContext:

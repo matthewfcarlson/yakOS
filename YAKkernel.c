@@ -1,5 +1,6 @@
 #include "YAKkernel.h"
 #include "clib.h"
+#define DEBUG 0
 /* ----------------- TCB stuff ----------------- */
 typedef struct taskblock *TCBp;
 /* the TCB struct definition */
@@ -102,9 +103,10 @@ void YKNewTask(void* taskFunc, void* taskStack, int priority){
 	int* newStackSP = taskStack;
 	++YKTCBMallocIndex;
 	
-	
-	//printString("\nBP at 0x");
-	//printWord((int)taskStack);
+	#if DEBUG == 1
+	printString("\nBP at 0x");
+	printWord((int)taskStack);
+	#endif
 	
 	//Create the stack	
 	//flags, CS, IP (the address of the function passed in)
@@ -114,8 +116,12 @@ void YKNewTask(void* taskFunc, void* taskStack, int priority){
 	newStackSP -= 1;
 	*(newStackSP) = (int)taskFunc; //function pointer
 	newStackSP -= 8; //we push 8 registers on the stack
-	//printString("\nSP at 0x");
-	//printWord((int)newStackSP);
+	
+	#if DEBUG == 1
+	printString("\nSP at 0x");
+	printWord((int)newStackSP);
+	#endif
+	
 	newTask->stackPtr = (int*)newStackSP; //we just add the space for the rest of the functions
 	
 
@@ -132,7 +138,9 @@ void YKNewTask(void* taskFunc, void* taskStack, int priority){
 }
 // - Starts actual execution of user code 	
 void YKRun(){
+	#if DEBUG == 1
 	printString("Starting Yak OS (c) 2015\n");
+	#endif
 	YKIsRunning = 1;
 	YKScheduler();
 	
@@ -141,8 +149,10 @@ void YKRun(){
 // - Determines the highest priority ready task 
 void YKScheduler(){
 	YKEnterMutex();
+	#if DEBUG == 1
 	printString("Scheduler\n");
 	printTCB(YKReadyTasks);
+	#endif
 	//if the new task to run is different
 	if (YKReadyTasks != YKCurrentTask){
 		//Load the new task
