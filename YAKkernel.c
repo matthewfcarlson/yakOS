@@ -10,7 +10,7 @@ typedef struct taskblock
     int priority;		/* current priority */
     int delayTicks;		/* #ticks yet to wait */
     TCBp next;			/* forward ptr for dbl linked list */
-    TCBptr prev;		/* backward ptr for dbl linked list */
+    TCBp prev;		/* backward ptr for dbl linked list */
 }  TCB;
 
 
@@ -29,7 +29,10 @@ int YKCtxSwCount; // - Global variable that tracks context switches
 int YKIdleCount;  // - Global variable incremented by idle task 
 int YKISRDepth;
 
-/*Kernel functions */
+/* Private Kernel functions */
+void YKAddToSuspendedList(TCBp task);
+void YKAddToReadyList(TCBp task);
+void YKRemoveFromList(TCBp task);
 
 // - Initializes all required kernel data structures 
 void YKInitialize(){
@@ -92,10 +95,11 @@ void YKIdleTask(){
 }   
 // - Creates a new task 
 void YKNewTask(void* taskFunc, void* taskStack, int priority){
-	TCBp taskListPtr = YKReadyTasks;
 	TCBp newTask = &YKTCBs[YKTCBMallocIndex];
 	int* newStackSP = taskStack;
 	++YKTCBMallocIndex;
+	
+	//TODO: fix this as this is broken
 	
 	//Create the stack	
 	//flags, CS, IP (the address of the function passed in)
@@ -103,9 +107,9 @@ void YKNewTask(void* taskFunc, void* taskStack, int priority){
 	newStackSP -= 2;
 	*(newStackSP) = 0; //CS
 	newStackSP -= 2;
-	*(newStackSP) = taskFunc; //function pointer
-	
-	newTask->stackPtr=taskStack - 18; //we just add the space for the rest of the functions
+	*(newStackSP) = (int)taskFunc; //function pointer
+	taskStack -= 18;
+	newTask->stackPtr = (int)taskStack; //we just add the space for the rest of the functions
 	
 
 	//Initalize the TCB
@@ -165,8 +169,11 @@ void YKTickHandler(){
 	}
 	
 }
+
 //Adds a task to the ready list
-void YKAddToReadyList(TCBp task){
+void YKAddToReadyList(TCBp newTask){
+	int priority = newTask->priority;
+	TCBp taskListPtr = YKReadyTasks;
 	//create the list if it's empty
 	if (YKReadyTasks == NULL)
 		YKReadyTasks = newTask;
@@ -190,6 +197,7 @@ void YKAddToReadyList(TCBp task){
 void YKAddToSuspendedList(TCBp task){
 	
 }
+
 //Removes it from whatever list it's in
 void YKRemoveFromList(TCBp task){
 	if (task->next != NULL){
@@ -208,8 +216,8 @@ void printTCB(void* ptcb){
 	printInt(tcb->priority);
 	printString("/");
 	printInt(tcb->delayTicks);
-	printString(":");
-	printInt(tcb->stackPtr);
+	printString(":0x");
+	printWord((int)tcb->stackPtr);
 	printString(")");
 	if (tcb->next != NULL){
 		printString("->");

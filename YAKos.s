@@ -1,6 +1,8 @@
 TickISR:
-	cli		;this is atomic so no more interrupts for a bit
-	;save context
+	cli				;this is atomic so no more interrupts for a bit
+	;save context 
+	;TODO: create a function that pushes and pops context in the same way
+	pushf 			;pushes flags
 	push ax
 	push bx
 	push dx
@@ -11,7 +13,8 @@ TickISR:
 	push ds
 	sti;
 	
-	call YKTickHandler ;call the tick handler
+	;call the tick handler to handle the interrupt
+	call YKTickHandler 
 	
 	cli
 	pop ds
@@ -24,18 +27,20 @@ TickISR:
 	mov	al, 0x20	; Load nonspecific EOI value (0x20) into register al
 	out	0x20, al	; Write EOI to PIC (port 0x20)
 	pop ax;
+	popf			; pops flags
 	
 	sti 	;return interrupts back on
 	iret 	;return from interrupt
 	
 ResetISR:
 	jmp main;
+	
 
 SwitchContext:
 	;we put the address we need in a local variable in YKDispatch
 	mov sp, [bp-2] ;this is the stack pointer
 	mov bp, sp ;set the basepointer accordingly - we are going to pop it soon
-	sub bp, 18 ;for debugging purposes
+	add bp, 18 ;for debugging purposes
 	
 	;next pop all the registers
 	pop ds

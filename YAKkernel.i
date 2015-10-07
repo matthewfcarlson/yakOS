@@ -57,7 +57,7 @@ typedef struct taskblock
     int priority;
     int delayTicks;
     TCBp next;
-
+    TCBp prev;
 } TCB;
 
 
@@ -77,6 +77,9 @@ int YKIdleCount;
 int YKISRDepth;
 
 
+void YKAddToSuspendedList(TCBp task);
+void YKAddToReadyList(TCBp task);
+void YKRemoveFromList(TCBp task);
 
 
 void YKInitialize(){
@@ -139,43 +142,30 @@ void YKIdleTask(){
 }
 
 void YKNewTask(void* taskFunc, void* taskStack, int priority){
-	TCBp taskListPtr = YKReadyTasks;
 	TCBp newTask = &YKTCBs[YKTCBMallocIndex];
 	int* newStackSP = taskStack;
 	++YKTCBMallocIndex;
 
 
 
-	newTask->stackPtr = taskStack;
+
+
 	*(newStackSP) =  64 ;
 	newStackSP -= 2;
 	*(newStackSP) = 0;
 	newStackSP -= 2;
-	*(newStackSP) = taskFunc;
-	newTask->stackPtr-=18;
-
+	*(newStackSP) = (int)taskFunc;
+	taskStack -= 18;
+	newTask->stackPtr = (int)taskStack;
 
 
 
 	newTask->priority = priority;
 	newTask->next =  0 ;
+	newTask->prev =  0 ;
 
 
-	if (YKReadyTasks ==  0 )
-		YKReadyTasks = newTask;
-
-	else if (YKReadyTasks->priority > priority){
-		newTask->next = YKReadyTasks;
-		YKReadyTasks = newTask;
-	}
-
-	else{
-		while (taskListPtr->next !=  0  && taskListPtr->next->priority > priority){
-			taskListPtr = taskListPtr -> next;
-		}
-		newTask-> next = taskListPtr -> next;
-		taskListPtr->next = newTask;
-	}
+	YKAddToReadyList(newTask);
 
 }
 
@@ -204,6 +194,7 @@ void YKDispatcher(){
 }
 
 
+
 void YKTickHandler(){
 	static int tickCount = 0;
 	TCBp currTCB = YKSuspendedTasks;
@@ -215,9 +206,53 @@ void YKTickHandler(){
 
 	while (currTCB !=  0 ){
 		--currTCB->delayTicks;
+
+		if (currTCB->delayTicks == 0){
+
+			YKRemoveFromList(currTCB);
+			YKAddToReadyList(currTCB);
+		}
 		currTCB = currTCB->next;
 	}
 
+}
+
+
+void YKAddToReadyList(TCBp newTask){
+	int priority = newTask->priority;
+	TCBp taskListPtr = YKReadyTasks;
+
+	if (YKReadyTasks ==  0 )
+		YKReadyTasks = newTask;
+
+	else if (YKReadyTasks->priority > priority){
+		newTask->next = YKReadyTasks;
+		YKReadyTasks = newTask;
+	}
+
+	else{
+
+		while (taskListPtr->next !=  0  && taskListPtr->next->priority > priority){
+			taskListPtr = taskListPtr -> next;
+		}
+
+		newTask-> next = taskListPtr -> next;
+		taskListPtr->next = newTask;
+	}
+}
+
+void YKAddToSuspendedList(TCBp task){
+
+}
+
+
+void YKRemoveFromList(TCBp task){
+	if (task->next !=  0 ){
+		task->next->prev = task->prev;
+	}
+	if (task->prev !=  0 ){
+		task->prev->next = task->next;
+	}
 }
 
 
@@ -228,8 +263,8 @@ void printTCB(void* ptcb){
 	printInt(tcb->priority);
 	printString("/");
 	printInt(tcb->delayTicks);
-	printString(":");
-	printInt(tcb->stackPtr);
+	printString(":0x");
+	printWord((int)tcb->stackPtr);
 	printString(")");
 	if (tcb->next !=  0 ){
 		printString("->");
