@@ -105,11 +105,11 @@ void YKNewTask(void* taskFunc, void* taskStack, int priority){
 	printWord((int)taskStack);
 	#endif
 	
-	//Create the stack	
+	//Create the default stack	
 	//flags, CS, IP (the address of the function passed in)
-	*(newStackSP) = DEFAULTFLAGS; //the default flags
-	--newStackSP;
-	*(newStackSP) = 0; //CS
+	*(newStackSP) = DEFAULTFLAGS; //put the default flags into memory address newStackSp
+	--newStackSP; //we minus 1 since C will automatically turn this to 2 because it's a pointer
+	*(newStackSP) = 0; //put the default CS into memory adress newStackSP - 2
 	--newStackSP;
 	*(newStackSP) = (int)taskFunc; //function pointer to put in the IP slot
 	newStackSP = newStackSP - 8;   //There are 8 registers on the stack that are default 0
@@ -162,9 +162,10 @@ void YKScheduler(){
 
 // - Begins or resumes execution of the next task
 void YKDispatcher(){
+	//Put the stack pointer of the current task on the stack
 	void* newSP = YKCurrentTask->stackPtr;
 	//call the assembly to dispatch the function
-	SwitchContext();
+	SwitchContext(); //TODO: change name
 }
 
 /* ----------------- ISR handlers ----------------- */

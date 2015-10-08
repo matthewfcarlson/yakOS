@@ -1,7 +1,7 @@
 TickISR:
 	cli				;this is atomic so no more interrupts for a bit
 	
-	;TODO save the SP to the current task TCB
+	
 	;TODO: create a function that pushes and pops context in the same way
 	push ax
 	push bx
@@ -11,14 +11,14 @@ TickISR:
 	push bp
 	push es
 	push ds
-	
-						;call the tick handler to handle the interrupt
+						
 	call YKEnterISR		;enter the ISR
 	sti 				;turn interupts back on
-
+						;call the tick handler to handle the interrupt
 	call YKTickHandler 
 
 	cli 				; Turn off interrupts
+
 						; Reset the PIC before we pop registers
 	mov	al, 0x20		; Load nonspecific EOI value (0x20) into register al
 	out	0x20, al		; Write EOI to PIC (port 0x20)
