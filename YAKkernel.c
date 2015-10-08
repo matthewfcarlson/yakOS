@@ -177,12 +177,13 @@ void YKTickHandler(){
 	printString("\nTick ");
 	printInt(tickCount);
 	printString("\n");
+
 	//Decrement the wait list
 	while (currTCB != NULL){
-		--currTCB->delayTicks;
+		currTCB->delayTicks = currTCB->delayTicks -1 ;
 		//check if it needs to go to the readyList
-		if (currTCB->delayTicks == 0){
-			//remove it from the 
+		if (currTCB->delayTicks <= 0){
+			//remove it from the list
 			YKRemoveFromList(currTCB);
 			YKAddToReadyList(currTCB);
 		}
