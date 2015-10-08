@@ -68,15 +68,12 @@ void YKExitMutex(){
 
 // - Enters an ISR
 void YKEnterISR(){
-	//since we are accessing a global variable, we need to disable interrupts
-	YKEnterMutex();
+	//since we are accessing a global variable, we need to disable interrupt
 	++YKISRDepth;
-	YKExitMutex();
 }
 
 // - Exits an ISR
 void YKExitISR(){
-	YKEnterMutex();
 	--YKISRDepth;
 	
 	//check if we need to run the scheduler
@@ -84,8 +81,6 @@ void YKExitISR(){
 		//run scheduler since we are call depth 0
 		YKScheduler();
 	}
-	
-	YKExitMutex();
 	
 }
 // - Kernel's idle task 
@@ -99,9 +94,11 @@ void YKIdleTask(){
 }   
 // - Creates a new task 
 void YKNewTask(void* taskFunc, void* taskStack, int priority){
+	YKEnterMutex(); //modifiying a global variable
 	TCBp newTask = &YKTCBs[YKTCBMallocIndex];
 	int* newStackSP = taskStack;
 	++YKTCBMallocIndex;
+	YKExitMutex();
 	
 	#if DEBUG == 1
 	printString("\nBP at 0x");
@@ -111,11 +108,11 @@ void YKNewTask(void* taskFunc, void* taskStack, int priority){
 	//Create the stack	
 	//flags, CS, IP (the address of the function passed in)
 	*(newStackSP) = DEFAULTFLAGS; //the default flags
-	newStackSP -= 1;
+	--newStackSP;
 	*(newStackSP) = 0; //CS
-	newStackSP -= 1;
-	*(newStackSP) = (int)taskFunc; //function pointer
-	newStackSP -= 8; //we push 8 registers on the stack
+	--newStackSP;
+	*(newStackSP) = (int)taskFunc; //function pointer to put in the IP slot
+	newStackSP = newStackSP - 8;   //There are 8 registers on the stack that are default 0
 	
 	#if DEBUG == 1
 	printString("\nSP at 0x");

@@ -11,18 +11,21 @@ TickISR:
 	push bp
 	push es
 	push ds
-	sti;
 	
-	
-	
-	;call the tick handler to handle the interrupt
+						;call the tick handler to handle the interrupt
+	call YKEnterISR		;enter the ISR
+	sti 				;turn interupts back on
+
 	call YKTickHandler 
+
+	cli 				; Turn off interrupts
+						; Reset the PIC before we pop registers
+	mov	al, 0x20		; Load nonspecific EOI value (0x20) into register al
+	out	0x20, al		; Write EOI to PIC (port 0x20)
+
+	call YKExitISR		; exit the ISR	
 	
-	cli
-					; Reset the PIC before we pop registers
-	mov	al, 0x20	; Load nonspecific EOI value (0x20) into register al
-	out	0x20, al	; Write EOI to PIC (port 0x20)
-	
+	;Restore registers
 	pop ds
 	pop es
 	pop bp
@@ -40,8 +43,9 @@ ResetISR:
 	
 KeyboardISR:
 	iret;
-	
-SwitchTask:
+
+;ISR for the software generated interrupts
+SwitchTaskISR:
 	cli				;this is atomic so no more interrupts for a bit
 	
 	;TODO save the SP to the current task TCB
@@ -58,8 +62,9 @@ SwitchTask:
 	
 	;Call the scheduler
 	call YKScheduler;
-	
+	iret;
 
+;This function is callewd by the dispatcher to swtich to the current task
 SwitchContext:
 	;we put the address we need in a local variable in YKDispatch
 	mov sp, [bp-2] ;this is the stack pointer
