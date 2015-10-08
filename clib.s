@@ -21,7 +21,7 @@ InterruptVectorTable:
         dd      0 ; Simptris Clear      ; Int 0Fh (IRQ 7)
         ; Software Interrupts:
         dd      0 ; Reserved (PC BIOS)  ; Int 10h
-        dd      SwitchTask              ; Int 11h
+        dd      SwitchTaskISR           ; Int 11h
         dd      0                       ; Int 12h
         dd      0                       ; Int 13h
         dd      0                       ; Int 14h
