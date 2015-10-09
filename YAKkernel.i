@@ -1,6 +1,6 @@
 #line 1 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
 #line 1 "YAKkernel.h"
-#line 9 "YAKkernel.h"
+#line 12 "YAKkernel.h"
 void YKInitialize();
 void YKEnterMutex();
 void YKExitMutex();
@@ -48,6 +48,7 @@ void exit(unsigned char code);
 void signalEOI(void);
 #line 3 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
 
+
 typedef struct taskblock *TCBp;
 
 typedef struct taskblock
@@ -82,8 +83,11 @@ void YKAddToReadyList(TCBp task);
 void YKRemoveFromList(TCBp task);
 
 
+
 void YKInitialize(){
 	YKEnterMutex();
+
+
 	YKCtxSwCount = 0;
 	YKISRDepth = 0;
 	YKIdleCount = 0;
@@ -145,28 +149,23 @@ void YKNewTask(void* taskFunc, void* taskStack, int priority){
 	TCBp newTask = &YKTCBs[YKTCBMallocIndex];
 	int* newStackSP = taskStack;
 	++YKTCBMallocIndex;
-
-
-	printString("\nBP at 0x");
-	printWord((int)taskStack);
-
-
+#line 113 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
 	*(newStackSP) =  64 ;
 	newStackSP -= 1;
 	*(newStackSP) = 0;
 	newStackSP -= 1;
 	*(newStackSP) = (int)taskFunc;
 	newStackSP -= 8;
-	printString("\nSP at 0x");
-	printWord((int)newStackSP);
-	newTask->stackPtr = (int)newStackSP;
+#line 125 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+	newTask->stackPtr = (int*)newStackSP;
 
 
 
 	newTask->priority = priority;
 	newTask->next =  0 ;
 	newTask->prev =  0 ;
-
+	newTask->delayTicks = 0;
+	newTask->state = 1;
 
 	YKAddToReadyList(newTask);
 	if (YKIsRunning)
@@ -174,7 +173,7 @@ void YKNewTask(void* taskFunc, void* taskStack, int priority){
 }
 
 void YKRun(){
-	printString("Starting Yak OS (c) 2015\n");
+#line 144 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
 	YKIsRunning = 1;
 	YKScheduler();
 
@@ -183,9 +182,7 @@ void YKRun(){
 
 void YKScheduler(){
 	YKEnterMutex();
-	printString("Scheduler\n");
-	printTCB(YKReadyTasks);
-
+#line 157 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
 	if (YKReadyTasks != YKCurrentTask){
 
 		YKCurrentTask = YKReadyTasks;
@@ -225,6 +222,7 @@ void YKTickHandler(){
 	}
 
 }
+
 
 
 void YKAddToReadyList(TCBp newTask){
