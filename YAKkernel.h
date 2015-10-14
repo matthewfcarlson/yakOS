@@ -20,8 +20,7 @@ void YKDispatcher(); // - Begins or resumes execution of the next task
 void YKEnterISR();
 void YKExitISR(); 
 void YKTickHandler();
-void printTCB(void* ptcb);
-void SwitchContext();
+void YKDelayTask(int ticks);
 
 
 

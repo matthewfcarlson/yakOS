@@ -22,8 +22,8 @@ YAKkernel.s:	YAKkernel.c
 		
 
 #app code
-app.s:	lab4b_app.c
-		$(COMPILER) lab4b_app.c app.i
+app.s:	lab4c_app.c
+		$(COMPILER) lab4c_app.c app.i
 		c86 -g app.i app.s
 
 clean:

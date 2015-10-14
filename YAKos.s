@@ -18,7 +18,6 @@ TickISR:
 	call YKTickHandler 
 
 	cli 				; Turn off interrupts
-
 						; Reset the PIC before we pop registers
 	mov	al, 0x20		; Load nonspecific EOI value (0x20) into register al
 	out	0x20, al		; Write EOI to PIC (port 0x20)
@@ -42,7 +41,14 @@ ResetISR:
 	jmp main;
 	
 KeyboardISR:
-	iret;
+	cli
+	push ax
+	
+	mov	al, 0x20		; Load nonspecific EOI value (0x20) into register al
+	out	0x20, al		; Write EOI to PIC (port 0x20)
+	pop ax
+	
+	iret
 
 ;ISR for the software generated interrupts
 SwitchTaskISR:
@@ -58,11 +64,31 @@ SwitchTaskISR:
 	push bp
 	push es
 	push ds
-	;Save the current SP on the TCB
 	
+	;Save the current SP on the TCB
+	mov si, word [YKCurrentTask]
+	mov [si],sp			;move sp to the TCB
+
+	mov	al, 0x20		; Load nonspecific EOI value (0x20) into register al
+	out	0x20, al		; Write EOI to PIC (port 0x20)
+	
+	call printCurrentTask;
 	;Call the scheduler
 	call YKScheduler;
-	iret;
+	jmp main			; this should never be called
+	
+	
+SaveSPtoTCB:	
+						;Save the current SP on the TCB
+	mov si, word [YKCurrentTask]
+	mov ax,sp			;move sp to the ax
+	add ax, 4
+	mov [si], ax		;move the SP to the TCB
+	
+						;Tell the PIC we've handled the interrupts
+	
+	ret					;return
+	
 
 ;This function is callewd by the dispatcher to swtich to the current task
 SwitchContext:
@@ -80,6 +106,7 @@ SwitchContext:
 	pop dx
 	pop bx
 	pop ax
+	
 RestoreContext:
 	;This will pop the next three registers: IP, CS, and flags
 	iret;

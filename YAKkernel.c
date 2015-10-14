@@ -1,6 +1,6 @@
 #include "YAKkernel.h"
 #include "clib.h"
-#define DEBUG 0
+#define DEBUG 1
 /* ----------------- TCB stuff ----------------- */
 typedef struct taskblock *TCBp;
 /* the TCB struct definition */
@@ -11,14 +11,14 @@ typedef struct taskblock
     int priority;		/* current priority */
     int delayTicks;		/* #ticks yet to wait */
     TCBp next;			/* forward ptr for dbl linked list */
-    TCBp prev;		/* backward ptr for dbl linked list */
+    TCBp prev;			/* backward ptr for dbl linked list */
 }  TCB;
 
 /* ----------------- TCB lisks ----------------- */
 TCBp YKCurrentTask;		/* the currently running task */
 TCBp YKReadyTasks;		/* a list of TCBs of all ready tasks in order of decreasing priority */ 
 TCBp YKSuspendedTasks;	/* tasks delayed or suspended */
-TCBp YKAllTasks;		/* a list of available TCBs */
+//TCBp YKAllTasks;		/* a list of available TCBs */
 TCB  YKTCBs[MAX_TASKS+1];/* array to allocate all needed TCBs*/
 int  YKTCBMallocIndex;	/* the index of the current empty TCB in the array */
 
@@ -35,6 +35,10 @@ void YKAddToSuspendedList(TCBp task);
 void YKAddToReadyList(TCBp task);
 void YKRemoveFromList(TCBp task);
 
+void printTCB(void* ptcb);
+void SwitchContext();
+void SaveSPtoTCB();
+
 /* ----------------- Public kernel functions -----------------  */
 // - Initializes all required kernel data structures 
 void YKInitialize(){
@@ -46,7 +50,7 @@ void YKInitialize(){
 	YKIdleCount = 0;
 	YKReadyTasks = NULL;
 	YKSuspendedTasks = NULL;
-	YKAllTasks = NULL;
+	//YKAllTasks = NULL;
 	YKCurrentTask = NULL;
 	YKTCBMallocIndex = 0;
 	YKIsRunning = 0;	
@@ -68,7 +72,10 @@ void YKExitMutex(){
 
 // - Enters an ISR
 void YKEnterISR(){
-	//since we are accessing a global variable, we need to disable interrupt
+	//If we have a call depth of zero we need to save the SP-2 to the TCB
+	if (YKISRDepth == 0){
+		SaveSPtoTCB();
+	}
 	++YKISRDepth;
 }
 
@@ -86,17 +93,20 @@ void YKExitISR(){
 // - Kernel's idle task 
 void YKIdleTask(){
 	int i = 0;
-	while(1){ //Just spin in idle and count to 5000
-		for (i = 0; i< 5000; i++);
-		++YKIdleCount;
+	//make sure we have interrupts on
+	YKExitMutex();
+	while(1){ //Just spin in idle and count to 1000
+		for (i = 0; i< 1000; i++);
+			++YKIdleCount;
+		printString("Idling...\n");
 	}
 	
 }   
 // - Creates a new task 
 void YKNewTask(void* taskFunc, void* taskStack, int priority){
-	YKEnterMutex(); //modifiying a global variable
 	TCBp newTask = &YKTCBs[YKTCBMallocIndex];
-	int* newStackSP = taskStack;
+	int* newStackSP = (int*)taskStack;
+	YKEnterMutex(); //modifiying a global variable
 	++YKTCBMallocIndex;
 	YKExitMutex();
 	
@@ -155,6 +165,11 @@ void YKScheduler(){
 		//Load the new task
 		YKCurrentTask = YKReadyTasks;
 		++YKCtxSwCount;
+		#if DEBUG == 1
+		printString("Switching context to task#");
+		printInt(YKCurrentTask->priority);
+		printString("\n");
+		#endif
 		YKDispatcher();
 	}
 	YKExitMutex();
@@ -173,6 +188,7 @@ void YKDispatcher(){
 void YKTickHandler(){
 	static int tickCount = 0;
 	TCBp currTCB = YKSuspendedTasks;
+	TCBp movingTCB = NULL;
 	
 	++tickCount;
 	printString("\nTick ");
@@ -185,10 +201,21 @@ void YKTickHandler(){
 		//check if it needs to go to the readyList
 		if (currTCB->delayTicks <= 0){
 			//remove it from the list
-			YKRemoveFromList(currTCB);
-			YKAddToReadyList(currTCB);
+			printString("Adding task #");
+			printInt(currTCB->priority);
+			printString(" back to the ready list\n");
+			
+			//Store the TCB before we move on to the next one
+			movingTCB = currTCB;
+			currTCB = currTCB->next;			
+			
+			YKRemoveFromList(movingTCB);
+			YKAddToReadyList(movingTCB);
 		}
-		currTCB = currTCB->next;
+		else{
+			currTCB = currTCB->next;
+		}
+		
 	}
 	
 }
@@ -204,6 +231,7 @@ void YKAddToReadyList(TCBp newTask){
 	//append to the list
 	else if (YKReadyTasks->priority > priority){
 		newTask->next = YKReadyTasks;
+		YKReadyTasks->prev = newTask;
 		YKReadyTasks = newTask;
 	}
 	//stick it somewhere in there
@@ -219,11 +247,20 @@ void YKAddToReadyList(TCBp newTask){
 }
 //Adds a task to the suspeneded list
 void YKAddToSuspendedList(TCBp task){
-	
+	task->next = YKSuspendedTasks;
+	YKSuspendedTasks->prev = task;
+	YKSuspendedTasks = task;
 }
 
 //Removes it from whatever list it's in
 void YKRemoveFromList(TCBp task){
+	if (YKReadyTasks == task){
+		YKReadyTasks = task->next;
+	}
+	else if (YKSuspendedTasks = task){
+		YKSuspendedTasks = task->next;
+	}
+	
 	if (task->next != NULL){
 		task->next->prev = task->prev;
 	}
@@ -232,7 +269,29 @@ void YKRemoveFromList(TCBp task){
 	}
 }
 
+/* ----------------- Delaying/semaphore functions ------------------- */
+void YKDelayTask(int ticks){
+	YKEnterMutex();
+	if (ticks > 0){
+		printString("Delaying\n\n");
+		YKCurrentTask->delayTicks += ticks;
+	}
+	YKRemoveFromList(YKCurrentTask);
+	YKAddToSuspendedList(YKCurrentTask);
+	printString("Current Ready Tasks:\n");
+	printTCB(YKReadyTasks);
+	printString("Calling Software delay interrupt\n");
+	//Call the software interrupt that causes a task switch
+	asm("int 11h");
+	//we will resume from here when we finished the delay ticks
+	YKExitMutex(); 
+	
+}
+
 /* ----------------- Helper functions TCB structure ----------------- */
+void printCurrentTask(){
+	printTCB(YKCurrentTask);
+}
 void printTCB(void* ptcb){
 	TCBp tcb = (TCBp) ptcb;
 	

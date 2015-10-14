@@ -12,8 +12,7 @@ void YKDispatcher();
 void YKEnterISR();
 void YKExitISR();
 void YKTickHandler();
-void printTCB(void* ptcb);
-void SwitchContext();
+void YKDelayTask(int ticks);
 
 
 
@@ -65,7 +64,7 @@ typedef struct taskblock
 TCBp YKCurrentTask;
 TCBp YKReadyTasks;
 TCBp YKSuspendedTasks;
-TCBp YKAllTasks;
+
 TCB YKTCBs[ 5 +1];
 int YKTCBMallocIndex;
 
@@ -82,6 +81,10 @@ void YKAddToSuspendedList(TCBp task);
 void YKAddToReadyList(TCBp task);
 void YKRemoveFromList(TCBp task);
 
+void printTCB(void* ptcb);
+void SwitchContext();
+void SaveSPtoTCB();
+
 
 
 void YKInitialize(){
@@ -93,7 +96,7 @@ void YKInitialize(){
 	YKIdleCount = 0;
 	YKReadyTasks =  0 ;
 	YKSuspendedTasks =  0 ;
-	YKAllTasks =  0 ;
+
 	YKCurrentTask =  0 ;
 	YKTCBMallocIndex = 0;
 	YKIsRunning = 0;
@@ -116,14 +119,14 @@ void YKExitMutex(){
 
 void YKEnterISR(){
 
-	YKEnterMutex();
+	if (YKISRDepth == 0){
+		SaveSPtoTCB();
+	}
 	++YKISRDepth;
-	YKExitMutex();
 }
 
 
 void YKExitISR(){
-	YKEnterMutex();
 	--YKISRDepth;
 
 
@@ -132,31 +135,46 @@ void YKExitISR(){
 		YKScheduler();
 	}
 
-	YKExitMutex();
-
 }
 
 void YKIdleTask(){
 	int i = 0;
+
+	YKExitMutex();
 	while(1){
-		for (i = 0; i< 5000; i++);
-		++YKIdleCount;
+		for (i = 0; i< 1000; i++);
+			++YKIdleCount;
+		printString("Idling...\n");
 	}
 
 }
 
 void YKNewTask(void* taskFunc, void* taskStack, int priority){
 	TCBp newTask = &YKTCBs[YKTCBMallocIndex];
-	int* newStackSP = taskStack;
+	int* newStackSP = (int*)taskStack;
+	YKEnterMutex();
 	++YKTCBMallocIndex;
-#line 113 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+	YKExitMutex();
+
+
+	printString("\nBP at 0x");
+	printWord((int)taskStack);
+
+
+
+
 	*(newStackSP) =  64 ;
-	newStackSP -= 1;
+	--newStackSP;
 	*(newStackSP) = 0;
-	newStackSP -= 1;
+	--newStackSP;
 	*(newStackSP) = (int)taskFunc;
-	newStackSP -= 8;
-#line 125 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+	newStackSP = newStackSP - 8;
+
+
+	printString("\nSP at 0x");
+	printWord((int)newStackSP);
+
+
 	newTask->stackPtr = (int*)newStackSP;
 
 
@@ -173,7 +191,9 @@ void YKNewTask(void* taskFunc, void* taskStack, int priority){
 }
 
 void YKRun(){
-#line 144 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+
+	printString("Starting Yak OS (c) 2015\n");
+
 	YKIsRunning = 1;
 	YKScheduler();
 
@@ -182,11 +202,20 @@ void YKRun(){
 
 void YKScheduler(){
 	YKEnterMutex();
-#line 157 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+
+	printString("Scheduler\n");
+	printTCB(YKReadyTasks);
+
+
 	if (YKReadyTasks != YKCurrentTask){
 
 		YKCurrentTask = YKReadyTasks;
 		++YKCtxSwCount;
+
+		printString("Switching context to task#");
+		printInt(YKCurrentTask->priority);
+		printString("\n");
+
 		YKDispatcher();
 	}
 	YKExitMutex();
@@ -194,6 +223,7 @@ void YKScheduler(){
 
 
 void YKDispatcher(){
+
 	void* newSP = YKCurrentTask->stackPtr;
 
 	SwitchContext();
@@ -204,21 +234,34 @@ void YKDispatcher(){
 void YKTickHandler(){
 	static int tickCount = 0;
 	TCBp currTCB = YKSuspendedTasks;
+	TCBp movingTCB =  0 ;
 
 	++tickCount;
 	printString("\nTick ");
 	printInt(tickCount);
 	printString("\n");
 
+
 	while (currTCB !=  0 ){
-		--currTCB->delayTicks;
+		currTCB->delayTicks = currTCB->delayTicks -1 ;
 
-		if (currTCB->delayTicks == 0){
+		if (currTCB->delayTicks <= 0){
 
-			YKRemoveFromList(currTCB);
-			YKAddToReadyList(currTCB);
+			printString("Adding task #");
+			printInt(currTCB->priority);
+			printString(" back to the ready list\n");
+
+
+			movingTCB = currTCB;
+			currTCB = currTCB->next;
+
+			YKRemoveFromList(movingTCB);
+			YKAddToReadyList(movingTCB);
 		}
-		currTCB = currTCB->next;
+		else{
+			currTCB = currTCB->next;
+		}
+
 	}
 
 }
@@ -234,6 +277,7 @@ void YKAddToReadyList(TCBp newTask){
 
 	else if (YKReadyTasks->priority > priority){
 		newTask->next = YKReadyTasks;
+		YKReadyTasks->prev = newTask;
 		YKReadyTasks = newTask;
 	}
 
@@ -249,11 +293,20 @@ void YKAddToReadyList(TCBp newTask){
 }
 
 void YKAddToSuspendedList(TCBp task){
-
+	task->next = YKSuspendedTasks;
+	YKSuspendedTasks->prev = task;
+	YKSuspendedTasks = task;
 }
 
 
 void YKRemoveFromList(TCBp task){
+	if (YKReadyTasks == task){
+		YKReadyTasks = task->next;
+	}
+	else if (YKSuspendedTasks = task){
+		YKSuspendedTasks = task->next;
+	}
+
 	if (task->next !=  0 ){
 		task->next->prev = task->prev;
 	}
@@ -263,6 +316,28 @@ void YKRemoveFromList(TCBp task){
 }
 
 
+void YKDelayTask(int ticks){
+	YKEnterMutex();
+	if (ticks > 0){
+		printString("Delaying\n\n");
+		YKCurrentTask->delayTicks += ticks;
+	}
+	YKRemoveFromList(YKCurrentTask);
+	YKAddToSuspendedList(YKCurrentTask);
+	printString("Current Ready Tasks:\n");
+	printTCB(YKReadyTasks);
+	printString("Calling Software delay interrupt\n");
+
+	asm("int 11h");
+
+	YKExitMutex();
+
+}
+
+
+void printCurrentTask(){
+	printTCB(YKCurrentTask);
+}
 void printTCB(void* ptcb){
 	TCBp tcb = (TCBp) ptcb;
 
