@@ -11,6 +11,14 @@ TickISR:
 	push bp
 	push es
 	push ds
+	
+	mov	ax, word [YKISRDepth]
+	test	ax, ax
+	jne TickISRSaved
+						;save the SP on the TCB since we are call depth zero
+	mov si, word [YKCurrentTask]
+	mov [si],sp			;move sp to the TCB
+	TickISRSaved:
 						
 	call YKEnterISR		;enter the ISR
 	sti 				;turn interupts back on
@@ -38,15 +46,37 @@ TickISR:
 	iret 	;return from interrupt
 	
 ResetISR:
+	cli
+	mov	al, 0x20		; Load nonspecific EOI value (0x20) into register al
+	out	0x20, al		; Write EOI to PIC (port 0x20)
+	sti
 	jmp main;
 	
 KeyboardISR:
 	cli
 	push ax
+	push bx
+	push dx
+	push si
+	push di
+	push bp
+	push es
+	push ds
 	
+	call YKEnterISR
 	mov	al, 0x20		; Load nonspecific EOI value (0x20) into register al
 	out	0x20, al		; Write EOI to PIC (port 0x20)
+	call YKExitISR
+	
+	pop ds
+	pop es
+	pop bp
+	pop di
+	pop si
+	pop dx
+	pop bx
 	pop ax
+	sti;
 	
 	iret
 
@@ -81,11 +111,9 @@ SwitchTaskISR:
 SaveSPtoTCB:	
 						;Save the current SP on the TCB
 	mov si, word [YKCurrentTask]
-	mov ax,sp			;move sp to the ax
-	add ax, 4
+	mov ax, sp			;move sp to the ax
+	add ax, 2h			;add 4. 2 for the call to EnterISR, 2 for the call to save SPtoTCB
 	mov [si], ax		;move the SP to the TCB
-	
-						;Tell the PIC we've handled the interrupts
 	
 	ret					;return
 	

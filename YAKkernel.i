@@ -119,9 +119,6 @@ void YKExitMutex(){
 
 void YKEnterISR(){
 
-	if (YKISRDepth == 0){
-		SaveSPtoTCB();
-	}
 	++YKISRDepth;
 }
 
@@ -144,7 +141,7 @@ void YKIdleTask(){
 	while(1){
 		for (i = 0; i< 1000; i++);
 			++YKIdleCount;
-		printString("Idling...\n");
+#line 101 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
 	}
 
 }
@@ -155,26 +152,14 @@ void YKNewTask(void* taskFunc, void* taskStack, int priority){
 	YKEnterMutex();
 	++YKTCBMallocIndex;
 	YKExitMutex();
-
-
-	printString("\nBP at 0x");
-	printWord((int)taskStack);
-
-
-
-
+#line 119 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
 	*(newStackSP) =  64 ;
 	--newStackSP;
 	*(newStackSP) = 0;
 	--newStackSP;
 	*(newStackSP) = (int)taskFunc;
 	newStackSP = newStackSP - 8;
-
-
-	printString("\nSP at 0x");
-	printWord((int)newStackSP);
-
-
+#line 131 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
 	newTask->stackPtr = (int*)newStackSP;
 
 
@@ -191,9 +176,7 @@ void YKNewTask(void* taskFunc, void* taskStack, int priority){
 }
 
 void YKRun(){
-
-	printString("Starting Yak OS (c) 2015\n");
-
+#line 150 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
 	YKIsRunning = 1;
 	YKScheduler();
 
@@ -202,20 +185,12 @@ void YKRun(){
 
 void YKScheduler(){
 	YKEnterMutex();
-
-	printString("Scheduler\n");
-	printTCB(YKReadyTasks);
-
-
+#line 163 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
 	if (YKReadyTasks != YKCurrentTask){
 
 		YKCurrentTask = YKReadyTasks;
 		++YKCtxSwCount;
-
-		printString("Switching context to task#");
-		printInt(YKCurrentTask->priority);
-		printString("\n");
-
+#line 172 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
 		YKDispatcher();
 	}
 	YKExitMutex();
@@ -319,15 +294,12 @@ void YKRemoveFromList(TCBp task){
 void YKDelayTask(int ticks){
 	YKEnterMutex();
 	if (ticks > 0){
-		printString("Delaying\n\n");
+#line 278 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
 		YKCurrentTask->delayTicks += ticks;
 	}
 	YKRemoveFromList(YKCurrentTask);
 	YKAddToSuspendedList(YKCurrentTask);
-	printString("Current Ready Tasks:\n");
-	printTCB(YKReadyTasks);
-	printString("Calling Software delay interrupt\n");
-
+#line 288 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
 	asm("int 11h");
 
 	YKExitMutex();

@@ -1,6 +1,6 @@
 #include "YAKkernel.h"
 #include "clib.h"
-#define DEBUG 1
+#define DEBUG 0
 /* ----------------- TCB stuff ----------------- */
 typedef struct taskblock *TCBp;
 /* the TCB struct definition */
@@ -72,10 +72,7 @@ void YKExitMutex(){
 
 // - Enters an ISR
 void YKEnterISR(){
-	//If we have a call depth of zero we need to save the SP-2 to the TCB
-	if (YKISRDepth == 0){
-		SaveSPtoTCB();
-	}
+	//If we have a call depth of zero we need to save the SP+4 to the TCB
 	++YKISRDepth;
 }
 
@@ -98,7 +95,9 @@ void YKIdleTask(){
 	while(1){ //Just spin in idle and count to 1000
 		for (i = 0; i< 1000; i++);
 			++YKIdleCount;
+		#if DEBUG == 1
 		printString("Idling...\n");
+		#endif
 	}
 	
 }   
@@ -273,14 +272,18 @@ void YKRemoveFromList(TCBp task){
 void YKDelayTask(int ticks){
 	YKEnterMutex();
 	if (ticks > 0){
+		#if DEBUG == 1
 		printString("Delaying\n\n");
+		#endif
 		YKCurrentTask->delayTicks += ticks;
 	}
 	YKRemoveFromList(YKCurrentTask);
 	YKAddToSuspendedList(YKCurrentTask);
+	#if DEBUG == 1
 	printString("Current Ready Tasks:\n");
 	printTCB(YKReadyTasks);
 	printString("Calling Software delay interrupt\n");
+	#endif
 	//Call the software interrupt that causes a task switch
 	asm("int 11h");
 	//we will resume from here when we finished the delay ticks
