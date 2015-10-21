@@ -30,16 +30,18 @@ unsigned YKCtxSwCount; // - Global variable that tracks context switches
 unsigned YKIdleCount;  // - Global variable incremented by idle task 
 unsigned YKISRDepth;
 int YKIsRunning;
+
 /* ----------------- Private Kernel function declerations -----------------  */
 void YKAddToSuspendedList(TCBp task);
 void YKAddToReadyList(TCBp task);
 void YKRemoveFromList(TCBp task);
-
+void printCurrentTask();
 void printTCB(void* ptcb);
 void SwitchContext();
 
 /* ----------------- Public kernel functions -----------------  */
 // - Initializes all required kernel data structures 
+
 void YKInitialize(){
 	YKEnterMutex();
 	
@@ -92,7 +94,7 @@ void YKIdleTask(){
 	//make sure we have interrupts on
 	YKExitMutex();
 	while(1){ //Just spin in idle and count to 1000
-		for (i = 0; i< 1000; i++);
+		//for (i = 0; i< 2; i++);
 			++YKIdleCount;
 		#if DEBUG == 1
 		printString("Idling...\n");
@@ -168,8 +170,9 @@ void YKScheduler(){
 		printInt(YKCurrentTask->priority);
 		printString("\n");
 		#endif
-		YKDispatcher();
+		
 	}
+	YKDispatcher();
 }
 
 // - Begins or resumes execution of the next task
@@ -277,13 +280,10 @@ void YKDelayTask(int ticks){
 		#endif
 		YKCurrentTask->delayTicks += ticks;
 	}
+	
 	YKRemoveFromList(YKCurrentTask);
 	YKAddToSuspendedList(YKCurrentTask);
-	#if DEBUG == 1
-	printString("Current Ready Tasks:\n");
-	printTCB(YKReadyTasks);
-	printString("Calling Software delay interrupt\n");
-	#endif
+	
 	//Call the software interrupt that causes a task switch
 	asm("int 11h");
 	//we will resume from here when we finished the delay ticks

@@ -77,12 +77,14 @@ unsigned YKIdleCount;
 unsigned YKISRDepth;
 int YKIsRunning;
 
+
 void YKAddToSuspendedList(TCBp task);
 void YKAddToReadyList(TCBp task);
 void YKRemoveFromList(TCBp task);
-
+void printCurrentTask();
 void printTCB(void* ptcb);
 void SwitchContext();
+
 
 
 
@@ -138,9 +140,9 @@ void YKIdleTask(){
 
 	YKExitMutex();
 	while(1){
-		for (i = 0; i< 1000; i++);
+
 			++YKIdleCount;
-#line 100 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+#line 102 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
 	}
 
 }
@@ -151,14 +153,14 @@ void YKNewTask(void* taskFunc, void* taskStack, int priority){
 	YKEnterMutex();
 	++YKTCBMallocIndex;
 	YKExitMutex();
-#line 118 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+#line 120 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
 	*(newStackSP) =  64 ;
 	--newStackSP;
 	*(newStackSP) = 0;
 	--newStackSP;
 	*(newStackSP) = (int)taskFunc;
 	newStackSP = newStackSP - 8;
-#line 130 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+#line 132 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
 	newTask->stackPtr = (int*)newStackSP;
 
 
@@ -175,7 +177,7 @@ void YKNewTask(void* taskFunc, void* taskStack, int priority){
 }
 
 void YKRun(){
-#line 149 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+#line 151 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
 	YKIsRunning = 1;
 	YKScheduler();
 
@@ -184,14 +186,14 @@ void YKRun(){
 
 void YKScheduler(){
 	YKEnterMutex();
-#line 162 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+#line 164 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
 	if (YKReadyTasks != YKCurrentTask){
 
 		YKCurrentTask = YKReadyTasks;
 		++YKCtxSwCount;
-#line 171 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
-		YKDispatcher();
+#line 174 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
 	}
+	YKDispatcher();
 }
 
 
@@ -219,7 +221,7 @@ void YKTickHandler(){
 		currTCB->delayTicks = currTCB->delayTicks -1 ;
 
 		if (currTCB->delayTicks <= 0){
-#line 208 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+#line 211 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
 			movingTCB = currTCB;
 			currTCB = currTCB->next;
 
@@ -287,12 +289,14 @@ void YKRemoveFromList(TCBp task){
 void YKDelayTask(int ticks){
 	YKEnterMutex();
 	if (ticks > 0){
-#line 278 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+#line 281 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
 		YKCurrentTask->delayTicks += ticks;
 	}
+
 	YKRemoveFromList(YKCurrentTask);
 	YKAddToSuspendedList(YKCurrentTask);
-#line 288 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+
+
 	asm("int 11h");
 
 	YKExitMutex();

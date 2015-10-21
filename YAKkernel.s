@@ -4,38 +4,38 @@
 	jmp	main	; Jump to program start
 	ALIGN	2
 YKInitialize:
-	; >>>>> Line:	43
+	; >>>>> Line:	45
 	; >>>>> void YKInitialize(){ 
 	jmp	L_YAKkernel_1
 L_YAKkernel_2:
-	; >>>>> Line:	44
+	; >>>>> Line:	46
 	; >>>>> YKEnterMutex(); 
 	call	YKEnterMutex
-	; >>>>> Line:	47
+	; >>>>> Line:	49
 	; >>>>> YKCtxSwCount = 0; 
 	mov	word [YKCtxSwCount], 0
-	; >>>>> Line:	48
+	; >>>>> Line:	50
 	; >>>>> YKISRDepth = 0; 
 	mov	word [YKISRDepth], 0
-	; >>>>> Line:	49
+	; >>>>> Line:	51
 	; >>>>> YKIdleCount = 0; 
 	mov	word [YKIdleCount], 0
-	; >>>>> Line:	50
+	; >>>>> Line:	52
 	; >>>>> YKReadyTasks =  0 ; 
 	mov	word [YKReadyTasks], 0
-	; >>>>> Line:	51
+	; >>>>> Line:	53
 	; >>>>> YKSuspendedTasks =  0 ; 
 	mov	word [YKSuspendedTasks], 0
-	; >>>>> Line:	53
+	; >>>>> Line:	55
 	; >>>>> YKCurrentTask =  0 ; 
 	mov	word [YKCurrentTask], 0
-	; >>>>> Line:	54
+	; >>>>> Line:	56
 	; >>>>> YKTCBMallocIndex = 0; 
 	mov	word [YKTCBMallocIndex], 0
-	; >>>>> Line:	55
+	; >>>>> Line:	57
 	; >>>>> YKIsRunning = 0; 
 	mov	word [YKIsRunning], 0
-	; >>>>> Line:	58
+	; >>>>> Line:	60
 	; >>>>> YKNewTask(YKIdleTask, &IdleStack[ 100 ],255); 
 	mov	ax, 255
 	push	ax
@@ -45,7 +45,7 @@ L_YAKkernel_2:
 	push	ax
 	call	YKNewTask
 	add	sp, 6
-	; >>>>> Line:	59
+	; >>>>> Line:	61
 	; >>>>> YKExitMutex(); 
 	call	YKExitMutex
 	mov	sp, bp
@@ -57,11 +57,11 @@ L_YAKkernel_1:
 	jmp	L_YAKkernel_2
 	ALIGN	2
 YKEnterMutex:
-	; >>>>> Line:	63
+	; >>>>> Line:	65
 	; >>>>> void YKEnterMutex(){ 
 	jmp	L_YAKkernel_4
 L_YAKkernel_5:
-	; >>>>> Line:	64
+	; >>>>> Line:	66
 	; >>>>> asm("cli"); 
 	cli
 	mov	sp, bp
@@ -73,11 +73,11 @@ L_YAKkernel_4:
 	jmp	L_YAKkernel_5
 	ALIGN	2
 YKExitMutex:
-	; >>>>> Line:	68
+	; >>>>> Line:	70
 	; >>>>> void YKExitMutex(){ 
 	jmp	L_YAKkernel_7
 L_YAKkernel_8:
-	; >>>>> Line:	69
+	; >>>>> Line:	71
 	; >>>>> asm("sti"); 
 	sti
 	mov	sp, bp
@@ -89,11 +89,11 @@ L_YAKkernel_7:
 	jmp	L_YAKkernel_8
 	ALIGN	2
 YKEnterISR:
-	; >>>>> Line:	73
+	; >>>>> Line:	75
 	; >>>>> void YKEnterISR(){ 
 	jmp	L_YAKkernel_10
 L_YAKkernel_11:
-	; >>>>> Line:	75
+	; >>>>> Line:	77
 	; >>>>> ++YKISRDepth; 
 	inc	word [YKISRDepth]
 	mov	sp, bp
@@ -105,19 +105,19 @@ L_YAKkernel_10:
 	jmp	L_YAKkernel_11
 	ALIGN	2
 YKExitISR:
-	; >>>>> Line:	79
+	; >>>>> Line:	81
 	; >>>>> void YKExitISR(){ 
 	jmp	L_YAKkernel_13
 L_YAKkernel_14:
-	; >>>>> Line:	80
+	; >>>>> Line:	82
 	; >>>>> --YKISRDepth; 
 	dec	word [YKISRDepth]
-	; >>>>> Line:	83
+	; >>>>> Line:	85
 	; >>>>> if (YKISRDepth == 0){ 
 	mov	ax, word [YKISRDepth]
 	test	ax, ax
 	jne	L_YAKkernel_15
-	; >>>>> Line:	85
+	; >>>>> Line:	87
 	; >>>>> YKScheduler(); 
 	call	YKScheduler
 L_YAKkernel_15:
@@ -130,32 +130,21 @@ L_YAKkernel_13:
 	jmp	L_YAKkernel_14
 	ALIGN	2
 YKIdleTask:
-	; >>>>> Line:	90
-	; >>>>> void YKIdleTask(){ 
+	; >>>>> Line:	92
+	; >>>>> (in 
 	jmp	L_YAKkernel_17
 L_YAKkernel_18:
-	; >>>>> Line:	93
+	; >>>>> Line:	95
 	; >>>>> YKExitMutex(); 
 	mov	word [bp-2], 0
-	; >>>>> Line:	93
+	; >>>>> Line:	95
 	; >>>>> YKExitMutex(); 
 	call	YKExitMutex
-	; >>>>> Line:	94
+	; >>>>> Line:	96
 	; >>>>> while(1){ 
 	jmp	L_YAKkernel_20
 L_YAKkernel_19:
-	; >>>>> Line:	95
-	; >>>>> for (i = 0; i< 1000; i++); 
-	mov	word [bp-2], 0
-	jmp	L_YAKkernel_23
-L_YAKkernel_22:
-L_YAKkernel_25:
-	inc	word [bp-2]
-L_YAKkernel_23:
-	cmp	word [bp-2], 1000
-	jl	L_YAKkernel_22
-L_YAKkernel_24:
-	; >>>>> Line:	96
+	; >>>>> Line:	98
 	; >>>>> ++YKIdleCount; 
 	inc	word [YKIdleCount]
 L_YAKkernel_20:
@@ -171,11 +160,11 @@ L_YAKkernel_17:
 	jmp	L_YAKkernel_18
 	ALIGN	2
 YKNewTask:
-	; >>>>> Line:	104
+	; >>>>> Line:	106
 	; >>>>> void YKNewTask(void* taskFunc, void* taskStack, int priority){ 
-	jmp	L_YAKkernel_27
-L_YAKkernel_28:
-	; >>>>> Line:	107
+	jmp	L_YAKkernel_23
+L_YAKkernel_24:
+	; >>>>> Line:	109
 	; >>>>> YKEnterMutex(); 
 	mov	ax, word [YKTCBMallocIndex]
 	mov	cx, 12
@@ -184,208 +173,208 @@ L_YAKkernel_28:
 	mov	word [bp-2], ax
 	mov	ax, word [bp+6]
 	mov	word [bp-4], ax
-	; >>>>> Line:	107
+	; >>>>> Line:	109
 	; >>>>> YKEnterMutex(); 
 	call	YKEnterMutex
-	; >>>>> Line:	108
+	; >>>>> Line:	110
 	; >>>>> ++YKTCBMallocIndex; 
 	inc	word [YKTCBMallocIndex]
-	; >>>>> Line:	109
+	; >>>>> Line:	111
 	; >>>>> YKExitMutex(); 
 	call	YKExitMutex
-	; >>>>> Line:	118
+	; >>>>> Line:	120
 	; >>>>> *(newStackSP) =  64 ; 
 	mov	si, word [bp-4]
 	mov	word [si], 64
-	; >>>>> Line:	119
-	; >>>>> --newStackSP; 
-	sub	word [bp-4], 2
-	; >>>>> Line:	120
-	; >>>>> *(newStackSP) = 0; 
-	mov	si, word [bp-4]
-	mov	word [si], 0
 	; >>>>> Line:	121
 	; >>>>> --newStackSP; 
 	sub	word [bp-4], 2
 	; >>>>> Line:	122
-	; >>>>> *(newStackSP) = ( 
+	; >>>>> *(newStackSP) = 0; 
+	mov	si, word [bp-4]
+	mov	word [si], 0
+	; >>>>> Line:	123
+	; >>>>> --newStackSP; 
+	sub	word [bp-4], 2
+	; >>>>> Line:	124
+	; >>>>> *(newStackSP) = (in 
 	mov	si, word [bp-4]
 	mov	ax, word [bp+4]
 	mov	word [si], ax
-	; >>>>> Line:	123
+	; >>>>> Line:	125
 	; >>>>> newStackSP = newStackSP - 8; 
 	mov	ax, word [bp-4]
 	sub	ax, 16
 	mov	word [bp-4], ax
-	; >>>>> Line:	130
+	; >>>>> Line:	132
 	; >>>>> newTask->stackPtr = (int*)newStackSP; 
 	mov	si, word [bp-2]
 	mov	ax, word [bp-4]
 	mov	word [si], ax
-	; >>>>> Line:	134
+	; >>>>> Line:	136
 	; >>>>> newTask->priority = priority; 
 	mov	si, word [bp-2]
 	add	si, 4
 	mov	ax, word [bp+8]
 	mov	word [si], ax
-	; >>>>> Line:	135
+	; >>>>> Line:	137
 	; >>>>> newTask->next =  0 ; 
 	mov	si, word [bp-2]
 	add	si, 8
 	mov	word [si], 0
-	; >>>>> Line:	136
+	; >>>>> Line:	138
 	; >>>>> newTask->prev =  0 ; 
 	mov	si, word [bp-2]
 	add	si, 10
 	mov	word [si], 0
-	; >>>>> Line:	137
+	; >>>>> Line:	139
 	; >>>>> newTask->delayTicks = 0; 
 	mov	si, word [bp-2]
 	add	si, 6
 	mov	word [si], 0
-	; >>>>> Line:	138
+	; >>>>> Line:	140
 	; >>>>> newTask->state = 1; 
 	mov	si, word [bp-2]
 	add	si, 2
 	mov	word [si], 1
-	; >>>>> Line:	140
+	; >>>>> Line:	142
 	; >>>>> YKAddToReadyList(newTask); 
 	push	word [bp-2]
 	call	YKAddToReadyList
 	add	sp, 2
-	; >>>>> Line:	141
+	; >>>>> Line:	143
 	; >>>>> if (YKIsRunning) 
 	mov	ax, word [YKIsRunning]
 	test	ax, ax
-	je	L_YAKkernel_29
-	; >>>>> Line:	142
+	je	L_YAKkernel_25
+	; >>>>> Line:	144
 	; >>>>> YKScheduler(); 
 	call	YKScheduler
-L_YAKkernel_29:
+L_YAKkernel_25:
+	mov	sp, bp
+	pop	bp
+	ret
+L_YAKkernel_23:
+	push	bp
+	mov	bp, sp
+	sub	sp, 4
+	jmp	L_YAKkernel_24
+	ALIGN	2
+YKRun:
+	; >>>>> Line:	147
+	; >>>>> void YKRun(){ 
+	jmp	L_YAKkernel_27
+L_YAKkernel_28:
+	; >>>>> Line:	151
+	; >>>>> YKIsRunning = 1; 
+	mov	word [YKIsRunning], 1
+	; >>>>> Line:	152
+	; >>>>> YKScheduler(); 
+	call	YKScheduler
 	mov	sp, bp
 	pop	bp
 	ret
 L_YAKkernel_27:
 	push	bp
 	mov	bp, sp
-	sub	sp, 4
 	jmp	L_YAKkernel_28
 	ALIGN	2
-YKRun:
-	; >>>>> Line:	145
-	; >>>>> void YKRun(){ 
-	jmp	L_YAKkernel_31
-L_YAKkernel_32:
-	; >>>>> Line:	149
-	; >>>>> YKIsRunning = 1; 
-	mov	word [YKIsRunning], 1
-	; >>>>> Line:	150
-	; >>>>> YKScheduler(); 
-	call	YKScheduler
-	mov	sp, bp
-	pop	bp
-	ret
-L_YAKkernel_31:
-	push	bp
-	mov	bp, sp
-	jmp	L_YAKkernel_32
-	ALIGN	2
 YKScheduler:
-	; >>>>> Line:	155
+	; >>>>> Line:	157
 	; >>>>> void YKScheduler(){ 
-	jmp	L_YAKkernel_34
-L_YAKkernel_35:
-	; >>>>> Line:	156
+	jmp	L_YAKkernel_30
+L_YAKkernel_31:
+	; >>>>> Line:	158
 	; >>>>> YKEnterMutex(); 
 	call	YKEnterMutex
-	; >>>>> Line:	162
+	; >>>>> Line:	164
 	; >>>>> if (YKReadyTasks != YKCurrentTask){ 
 	mov	ax, word [YKCurrentTask]
 	cmp	ax, word [YKReadyTasks]
-	je	L_YAKkernel_36
-	; >>>>> Line:	164
+	je	L_YAKkernel_32
+	; >>>>> Line:	166
 	; >>>>> YKCurrentTask = YKReadyTasks; 
 	mov	ax, word [YKReadyTasks]
 	mov	word [YKCurrentTask], ax
-	; >>>>> Line:	165
+	; >>>>> Line:	167
 	; >>>>> ++YKCtxSwCount; 
 	inc	word [YKCtxSwCount]
-	; >>>>> Line:	171
+L_YAKkernel_32:
+	; >>>>> Line:	175
 	; >>>>> YKDispatcher(); 
 	call	YKDispatcher
-L_YAKkernel_36:
+	mov	sp, bp
+	pop	bp
+	ret
+L_YAKkernel_30:
+	push	bp
+	mov	bp, sp
+	jmp	L_YAKkernel_31
+	ALIGN	2
+YKDispatcher:
+	; >>>>> Line:	179
+	; >>>>> void YKDispatcher(){ 
+	jmp	L_YAKkernel_34
+L_YAKkernel_35:
+	; >>>>> Line:	183
+	; >>>>> SwitchContext(); 
+	mov	si, word [YKCurrentTask]
+	mov	ax, word [si]
+	mov	word [bp-2], ax
+	; >>>>> Line:	183
+	; >>>>> SwitchContext(); 
+	call	SwitchContext
 	mov	sp, bp
 	pop	bp
 	ret
 L_YAKkernel_34:
 	push	bp
 	mov	bp, sp
+	push	cx
 	jmp	L_YAKkernel_35
 	ALIGN	2
-YKDispatcher:
-	; >>>>> Line:	176
-	; >>>>> void YKDispatcher(){ 
-	jmp	L_YAKkernel_38
-L_YAKkernel_39:
-	; >>>>> Line:	180
-	; >>>>> SwitchContext(); 
-	mov	si, word [YKCurrentTask]
-	mov	ax, word [si]
-	mov	word [bp-2], ax
-	; >>>>> Line:	180
-	; >>>>> SwitchContext(); 
-	call	SwitchContext
-	mov	sp, bp
-	pop	bp
-	ret
-L_YAKkernel_38:
-	push	bp
-	mov	bp, sp
-	push	cx
-	jmp	L_YAKkernel_39
-	ALIGN	2
-L_YAKkernel_41:
+L_YAKkernel_37:
 	DW	0
-L_YAKkernel_43:
+L_YAKkernel_39:
 	DB	0xA,0
-L_YAKkernel_42:
+L_YAKkernel_38:
 	DB	0xA,"Tick ",0
 	ALIGN	2
 YKTickHandler:
-	; >>>>> Line:	185
+	; >>>>> Line:	188
 	; >>>>> void YKTickHandler(){ 
-	jmp	L_YAKkernel_44
-L_YAKkernel_45:
-	; >>>>> Line:	190
+	jmp	L_YAKkernel_40
+L_YAKkernel_41:
+	; >>>>> Line:	193
 	; >>>>> ++tickCount; 
 	mov	ax, word [YKSuspendedTasks]
 	mov	word [bp-2], ax
 	mov	word [bp-4], 0
-	; >>>>> Line:	190
+	; >>>>> Line:	193
 	; >>>>> ++tickCount; 
-	inc	word [L_YAKkernel_41]
-	; >>>>> Line:	191
+	inc	word [L_YAKkernel_37]
+	; >>>>> Line:	194
 	; >>>>> printString("\nTick "); 
-	mov	ax, L_YAKkernel_42
+	mov	ax, L_YAKkernel_38
 	push	ax
 	call	printString
 	add	sp, 2
-	; >>>>> Line:	192
+	; >>>>> Line:	195
 	; >>>>> printInt(tickCount); 
-	push	word [L_YAKkernel_41]
+	push	word [L_YAKkernel_37]
 	call	printInt
 	add	sp, 2
-	; >>>>> Line:	193
-	; >>>>> eadyT 
-	mov	ax, L_YAKkernel_43
+	; >>>>> Line:	196
+	; >>>>> ReadyTask 
+	mov	ax, L_YAKkernel_39
 	push	ax
 	call	printString
 	add	sp, 2
-	; >>>>> Line:	196
+	; >>>>> Line:	199
 	; >>>>> while (currTCB !=  0 ){ 
-	jmp	L_YAKkernel_47
-L_YAKkernel_46:
-	; >>>>> Line:	197
+	jmp	L_YAKkernel_43
+L_YAKkernel_42:
+	; >>>>> Line:	200
 	; >>>>> currTCB->delayTicks = currTCB->delayTicks -1 ; 
 	mov	si, word [bp-2]
 	add	si, 6
@@ -394,61 +383,61 @@ L_YAKkernel_46:
 	mov	si, word [bp-2]
 	add	si, 6
 	mov	word [si], ax
-	; >>>>> Line:	199
+	; >>>>> Line:	202
 	; >>>>> if (currTCB->delayTicks <= 0){ 
 	mov	si, word [bp-2]
 	add	si, 6
 	cmp	word [si], 0
-	jg	L_YAKkernel_49
-	; >>>>> Line:	208
+	jg	L_YAKkernel_45
+	; >>>>> Line:	211
 	; >>>>> movingTCB = currTCB; 
 	mov	ax, word [bp-2]
 	mov	word [bp-4], ax
-	; >>>>> Line:	209
+	; >>>>> Line:	212
 	; >>>>> currTCB = currTCB->next; 
 	mov	si, word [bp-2]
 	add	si, 8
 	mov	ax, word [si]
 	mov	word [bp-2], ax
-	; >>>>> Line:	211
+	; >>>>> Line:	214
 	; >>>>> YKRemoveFromList(movingTCB); 
 	push	word [bp-4]
 	call	YKRemoveFromList
 	add	sp, 2
-	; >>>>> Line:	212
+	; >>>>> Line:	215
 	; >>>>> YKAddToReadyList(movingTCB); 
 	push	word [bp-4]
 	call	YKAddToReadyList
 	add	sp, 2
-	jmp	L_YAKkernel_50
-L_YAKkernel_49:
-	; >>>>> Line:	215
+	jmp	L_YAKkernel_46
+L_YAKkernel_45:
+	; >>>>> Line:	218
 	; >>>>> currTCB = currTCB->next; 
 	mov	si, word [bp-2]
 	add	si, 8
 	mov	ax, word [si]
 	mov	word [bp-2], ax
-L_YAKkernel_50:
-L_YAKkernel_47:
+L_YAKkernel_46:
+L_YAKkernel_43:
 	mov	ax, word [bp-2]
 	test	ax, ax
-	jne	L_YAKkernel_46
-L_YAKkernel_48:
+	jne	L_YAKkernel_42
+L_YAKkernel_44:
 	mov	sp, bp
 	pop	bp
 	ret
-L_YAKkernel_44:
+L_YAKkernel_40:
 	push	bp
 	mov	bp, sp
 	sub	sp, 4
-	jmp	L_YAKkernel_45
+	jmp	L_YAKkernel_41
 	ALIGN	2
 YKAddToReadyList:
-	; >>>>> Line:	224
+	; >>>>> Line:	227
 	; >>>>> void YKAddToReadyList(TCBp newTask){ 
-	jmp	L_YAKkernel_52
-L_YAKkernel_53:
-	; >>>>> Line:	228
+	jmp	L_YAKkernel_48
+L_YAKkernel_49:
+	; >>>>> Line:	231
 	; >>>>> if (YKReadyTasks ==  0 ) 
 	mov	si, word [bp+4]
 	add	si, 4
@@ -456,68 +445,68 @@ L_YAKkernel_53:
 	mov	word [bp-2], ax
 	mov	ax, word [YKReadyTasks]
 	mov	word [bp-4], ax
-	; >>>>> Line:	228
+	; >>>>> Line:	231
 	; >>>>> if (YKReadyTasks ==  0 ) 
 	mov	ax, word [YKReadyTasks]
 	test	ax, ax
-	jne	L_YAKkernel_54
-	; >>>>> Line:	229
-	; >>>>> id YKRemoveFrom 
+	jne	L_YAKkernel_50
+	; >>>>> Line:	232
+	; >>>>> id YKRemoveFromLis 
 	mov	ax, word [bp+4]
 	mov	word [YKReadyTasks], ax
-	jmp	L_YAKkernel_55
-L_YAKkernel_54:
-	; >>>>> Line:	231
+	jmp	L_YAKkernel_51
+L_YAKkernel_50:
+	; >>>>> Line:	234
 	; >>>>> else if (YKReadyTasks->priority > priority){ 
 	mov	si, word [YKReadyTasks]
 	add	si, 4
 	mov	ax, word [bp-2]
 	cmp	ax, word [si]
-	jge	L_YAKkernel_56
-	; >>>>> Line:	232
+	jge	L_YAKkernel_52
+	; >>>>> Line:	235
 	; >>>>> newTask->next = YKReadyTasks; 
 	mov	si, word [bp+4]
 	add	si, 8
 	mov	ax, word [YKReadyTasks]
 	mov	word [si], ax
-	; >>>>> Line:	233
+	; >>>>> Line:	236
 	; >>>>> YKReadyTasks->prev = newTask; 
 	mov	si, word [YKReadyTasks]
 	add	si, 10
 	mov	ax, word [bp+4]
 	mov	word [si], ax
-	; >>>>> Line:	234
+	; >>>>> Line:	237
 	; >>>>> YKReadyTasks = newTask; 
 	mov	ax, word [bp+4]
 	mov	word [YKReadyTasks], ax
-	jmp	L_YAKkernel_57
-L_YAKkernel_56:
-	; >>>>> Line:	239
+	jmp	L_YAKkernel_53
+L_YAKkernel_52:
+	; >>>>> Line:	242
 	; >>>>> while (taskListPtr->next !=  0  && taskListPtr->next->priority > priority){ 
-	jmp	L_YAKkernel_59
-L_YAKkernel_58:
-	; >>>>> Line:	240
+	jmp	L_YAKkernel_55
+L_YAKkernel_54:
+	; >>>>> Line:	243
 	; >>>>> taskListPtr = taskListPtr -> next; 
 	mov	si, word [bp-4]
 	add	si, 8
 	mov	ax, word [si]
 	mov	word [bp-4], ax
-L_YAKkernel_59:
+L_YAKkernel_55:
 	mov	si, word [bp-4]
 	add	si, 8
 	mov	ax, word [si]
 	test	ax, ax
-	je	L_YAKkernel_61
+	je	L_YAKkernel_57
 	mov	si, word [bp-4]
 	add	si, 8
 	mov	si, word [si]
 	add	si, 4
 	mov	ax, word [bp-2]
 	cmp	ax, word [si]
-	jl	L_YAKkernel_58
-L_YAKkernel_61:
-L_YAKkernel_60:
-	; >>>>> Line:	243
+	jl	L_YAKkernel_54
+L_YAKkernel_57:
+L_YAKkernel_56:
+	; >>>>> Line:	246
 	; >>>>> newTask-> next = taskListPtr -> next; 
 	mov	si, word [bp-4]
 	add	si, 8
@@ -525,92 +514,92 @@ L_YAKkernel_60:
 	add	di, 8
 	mov	ax, word [si]
 	mov	word [di], ax
-	; >>>>> Line:	244
+	; >>>>> Line:	247
 	; >>>>> taskListPtr->next = newTask; 
 	mov	si, word [bp-4]
 	add	si, 8
 	mov	ax, word [bp+4]
 	mov	word [si], ax
-L_YAKkernel_57:
-L_YAKkernel_55:
+L_YAKkernel_53:
+L_YAKkernel_51:
 	mov	sp, bp
 	pop	bp
 	ret
-L_YAKkernel_52:
+L_YAKkernel_48:
 	push	bp
 	mov	bp, sp
 	sub	sp, 4
-	jmp	L_YAKkernel_53
+	jmp	L_YAKkernel_49
 	ALIGN	2
 YKAddToSuspendedList:
-	; >>>>> Line:	248
+	; >>>>> Line:	251
 	; >>>>> void YKAddToSuspendedList(TCBp task){ 
-	jmp	L_YAKkernel_63
-L_YAKkernel_64:
-	; >>>>> Line:	249
+	jmp	L_YAKkernel_59
+L_YAKkernel_60:
+	; >>>>> Line:	252
 	; >>>>> task->next = YKSuspendedTasks; 
 	mov	si, word [bp+4]
 	add	si, 8
 	mov	ax, word [YKSuspendedTasks]
 	mov	word [si], ax
-	; >>>>> Line:	250
+	; >>>>> Line:	253
 	; >>>>> YKSuspendedTasks->prev = task; 
 	mov	si, word [YKSuspendedTasks]
 	add	si, 10
 	mov	ax, word [bp+4]
 	mov	word [si], ax
-	; >>>>> Line:	251
+	; >>>>> Line:	254
 	; >>>>> YKSuspendedTasks = task; 
 	mov	ax, word [bp+4]
 	mov	word [YKSuspendedTasks], ax
 	mov	sp, bp
 	pop	bp
 	ret
-L_YAKkernel_63:
+L_YAKkernel_59:
 	push	bp
 	mov	bp, sp
-	jmp	L_YAKkernel_64
+	jmp	L_YAKkernel_60
 	ALIGN	2
 YKRemoveFromList:
-	; >>>>> Line:	255
-	; >>>>> dToSuspendedList(YKCu 
-	jmp	L_YAKkernel_66
-L_YAKkernel_67:
-	; >>>>> Line:	256
+	; >>>>> Line:	258
+	; >>>>> ddToSuspendedList(YKCurr 
+	jmp	L_YAKkernel_62
+L_YAKkernel_63:
+	; >>>>> Line:	259
 	; >>>>> if (YKReadyTasks == task){ 
 	mov	ax, word [bp+4]
 	cmp	ax, word [YKReadyTasks]
-	jne	L_YAKkernel_68
-	; >>>>> Line:	257
+	jne	L_YAKkernel_64
+	; >>>>> Line:	260
 	; >>>>> YKReadyTasks = task->next; 
 	mov	si, word [bp+4]
 	add	si, 8
 	mov	ax, word [si]
 	mov	word [YKReadyTasks], ax
-	jmp	L_YAKkernel_69
-L_YAKkernel_68:
-	; >>>>> Line:	259
+	jmp	L_YAKkernel_65
+L_YAKkernel_64:
+	; >>>>> Line:	262
 	; >>>>> else if (YKSuspendedTasks = task){ 
 	mov	ax, word [bp+4]
 	mov	word [YKSuspendedTasks], ax
 	test	ax, ax
-	je	L_YAKkernel_70
-	; >>>>> Line:	260
+	je	L_YAKkernel_66
+	; >>>>> Line:	263
 	; >>>>> YKSuspendedTasks = task->next; 
 	mov	si, word [bp+4]
 	add	si, 8
 	mov	ax, word [si]
 	mov	word [YKSuspendedTasks], ax
-L_YAKkernel_70:
-L_YAKkernel_69:
-	; >>>>> Line:	263
+L_YAKkernel_66:
+L_YAKkernel_65:
+	; >>>>> Line:	266
 	; >>>>> if (task->next !=  0 ){ 
 	mov	si, word [bp+4]
 	add	si, 8
 	mov	ax, word [si]
 	test	ax, ax
-	je	L_YAKkernel_71
-	; >>>>> Line:	264
+	je	L_YAKkernel_67
+	; >>>>> Line:	267
 	; >>>>> task->next->prev = task->prev; 
 	mov	si, word [bp+4]
 	add	si, 10
@@ -620,15 +609,15 @@ L_YAKkernel_69:
 	add	di, 10
 	mov	ax, word [si]
 	mov	word [di], ax
-L_YAKkernel_71:
-	; >>>>> Line:	266
+L_YAKkernel_67:
+	; >>>>> Line:	269
 	; >>>>> if (task->prev !=  0 ){ 
 	mov	si, word [bp+4]
 	add	si, 10
 	mov	ax, word [si]
 	test	ax, ax
-	je	L_YAKkernel_72
-	; >>>>> Line:	267
+	je	L_YAKkernel_68
+	; >>>>> Line:	270
 	; >>>>> task->prev->next = task->next; 
 	mov	si, word [bp+4]
 	add	si, 8
@@ -638,41 +627,41 @@ L_YAKkernel_71:
 	add	di, 8
 	mov	ax, word [si]
 	mov	word [di], ax
-L_YAKkernel_72:
+L_YAKkernel_68:
 	mov	sp, bp
 	pop	bp
 	ret
-L_YAKkernel_66:
+L_YAKkernel_62:
 	push	bp
 	mov	bp, sp
-	jmp	L_YAKkernel_67
+	jmp	L_YAKkernel_63
 	ALIGN	2
 YKDelayTask:
-	; >>>>> Line:	272
+	; >>>>> Line:	275
 	; >>>>> void YKDelayTask(int ticks){ 
-	jmp	L_YAKkernel_74
-L_YAKkernel_75:
-	; >>>>> Line:	273
+	jmp	L_YAKkernel_70
+L_YAKkernel_71:
+	; >>>>> Line:	276
 	; >>>>> YKEnterMutex(); 
 	call	YKEnterMutex
-	; >>>>> Line:	274
+	; >>>>> Line:	277
 	; >>>>> if (ticks > 0){ 
 	cmp	word [bp+4], 0
-	jle	L_YAKkernel_76
-	; >>>>> Line:	278
+	jle	L_YAKkernel_72
+	; >>>>> Line:	281
 	; >>>>> YKCurrentTask->delayTicks += ticks; 
 	mov	si, word [YKCurrentTask]
 	add	si, 6
 	mov	ax, word [bp+4]
 	add	word [si], ax
-L_YAKkernel_76:
-	; >>>>> Line:	280
+L_YAKkernel_72:
+	; >>>>> Line:	284
 	; >>>>> YKRemoveFromList(YKCurrentTask); 
 	push	word [YKCurrentTask]
 	call	YKRemoveFromList
 	add	sp, 2
-	; >>>>> Line:	281
-	; >>>>> YKAddToSuspendedList(YKCu 
+	; >>>>> Line:	285
+	; >>>>> YKAddToSuspendedList(YKCurr 
 	push	word [YKCurrentTask]
 	call	YKAddToSuspendedList
 	add	sp, 2
@@ -685,16 +674,16 @@ L_YAKkernel_76:
 	mov	sp, bp
 	pop	bp
 	ret
-L_YAKkernel_74:
+L_YAKkernel_70:
 	push	bp
 	mov	bp, sp
-	jmp	L_YAKkernel_75
+	jmp	L_YAKkernel_71
 	ALIGN	2
 printCurrentTask:
 	; >>>>> Line:	295
 	; >>>>> void printCurrentTask(){ 
-	jmp	L_YAKkernel_78
-L_YAKkernel_79:
+	jmp	L_YAKkernel_74
+L_YAKkernel_75:
 	; >>>>> Line:	296
 	; >>>>> printTCB(YKCurrentTask); 
 	push	word [YKCurrentTask]
@@ -703,35 +692,35 @@ L_YAKkernel_79:
 	mov	sp, bp
 	pop	bp
 	ret
-L_YAKkernel_78:
+L_YAKkernel_74:
 	push	bp
 	mov	bp, sp
-	jmp	L_YAKkernel_79
-L_YAKkernel_86:
-	DB	" ",0xA,0
-L_YAKkernel_85:
-	DB	"->",0
-L_YAKkernel_84:
-	DB	")",0
-L_YAKkernel_83:
-	DB	":0x",0
+	jmp	L_YAKkernel_75
 L_YAKkernel_82:
-	DB	"/",0
+	DB	" ",0xA,0
 L_YAKkernel_81:
+	DB	"->",0
+L_YAKkernel_80:
+	DB	")",0
+L_YAKkernel_79:
+	DB	":0x",0
+L_YAKkernel_78:
+	DB	"/",0
+L_YAKkernel_77:
 	DB	"TCB(",0
 	ALIGN	2
 printTCB:
 	; >>>>> Line:	298
 	; >>>>> void printTCB(void* ptcb){ 
-	jmp	L_YAKkernel_87
-L_YAKkernel_88:
+	jmp	L_YAKkernel_83
+L_YAKkernel_84:
 	; >>>>> Line:	301
 	; >>>>> printString("TCB("); 
 	mov	ax, word [bp+4]
 	mov	word [bp-2], ax
 	; >>>>> Line:	301
 	; >>>>> printString("TCB("); 
-	mov	ax, L_YAKkernel_81
+	mov	ax, L_YAKkernel_77
 	push	ax
 	call	printString
 	add	sp, 2
@@ -744,7 +733,7 @@ L_YAKkernel_88:
 	add	sp, 2
 	; >>>>> Line:	303
 	; >>>>> printString("/"); 
-	mov	ax, L_YAKkernel_82
+	mov	ax, L_YAKkernel_78
 	push	ax
 	call	printString
 	add	sp, 2
@@ -757,7 +746,7 @@ L_YAKkernel_88:
 	add	sp, 2
 	; >>>>> Line:	305
 	; >>>>> printString(":0x"); 
-	mov	ax, L_YAKkernel_83
+	mov	ax, L_YAKkernel_79
 	push	ax
 	call	printString
 	add	sp, 2
@@ -769,7 +758,7 @@ L_YAKkernel_88:
 	add	sp, 2
 	; >>>>> Line:	307
 	; >>>>> printString(")"); 
-	mov	ax, L_YAKkernel_84
+	mov	ax, L_YAKkernel_80
 	push	ax
 	call	printString
 	add	sp, 2
@@ -779,10 +768,10 @@ L_YAKkernel_88:
 	add	si, 8
 	mov	ax, word [si]
 	test	ax, ax
-	je	L_YAKkernel_89
+	je	L_YAKkernel_85
 	; >>>>> Line:	309
 	; >>>>> printString("->"); 
-	mov	ax, L_YAKkernel_85
+	mov	ax, L_YAKkernel_81
 	push	ax
 	call	printString
 	add	sp, 2
@@ -793,23 +782,23 @@ L_YAKkernel_88:
 	push	word [si]
 	call	printTCB
 	add	sp, 2
-	jmp	L_YAKkernel_90
-L_YAKkernel_89:
+	jmp	L_YAKkernel_86
+L_YAKkernel_85:
 	; >>>>> Line:	313
 	; >>>>> printString(" \n"); 
-	mov	ax, L_YAKkernel_86
+	mov	ax, L_YAKkernel_82
 	push	ax
 	call	printString
 	add	sp, 2
-L_YAKkernel_90:
+L_YAKkernel_86:
 	mov	sp, bp
 	pop	bp
 	ret
-L_YAKkernel_87:
+L_YAKkernel_83:
 	push	bp
 	mov	bp, sp
 	push	cx
-	jmp	L_YAKkernel_88
+	jmp	L_YAKkernel_84
 	ALIGN	2
 YKCtxSwCount:
 	TIMES	2 db 0

@@ -64,10 +64,10 @@ KeyboardISR:
 	push es
 	push ds
 	
-	call YKEnterISR
+	;call YKEnterISR
 	mov	al, 0x20		; Load nonspecific EOI value (0x20) into register al
 	out	0x20, al		; Write EOI to PIC (port 0x20)
-	call YKExitISR
+	;call YKExitISR
 	
 	pop ds
 	pop es
@@ -103,7 +103,6 @@ SwitchTaskISR:
 	mov	al, 0x20		; Load nonspecific EOI value (0x20) into register al
 	out	0x20, al		; Write EOI to PIC (port 0x20)
 	
-	call printCurrentTask;
 	;Call the scheduler
 	call YKScheduler;
 	jmp main			; this should never be called
@@ -123,8 +122,10 @@ SaveSPtoTCB:
 SwitchContext:
 	;we put the address we need in a local variable in YKDispatch
 	mov sp, [bp-2] ;this is the stack pointer
-	mov bp, sp ;set the basepointer accordingly - we are going to pop it soon
-	add bp, 18 ;for debugging purposes
+	
+	;This is not neccesary so commented out for performance boost
+	;mov bp, sp ;set the basepointer accordingly - we are going to pop it soon
+	;add bp, 18 ;for debugging purposes
 	
 	;next pop all the registers
 	pop ds
@@ -136,7 +137,6 @@ SwitchContext:
 	pop bx
 	pop ax
 	
-RestoreContext:
-	;This will pop the next three registers: IP, CS, and flags
-	iret;
+	;This will pop the next three items on the stack: IP, CS, and flags
+	iret
 	
