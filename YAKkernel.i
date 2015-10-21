@@ -83,7 +83,6 @@ void YKRemoveFromList(TCBp task);
 
 void printTCB(void* ptcb);
 void SwitchContext();
-void SaveSPtoTCB();
 
 
 

@@ -49,8 +49,9 @@ ResetISR:
 	cli
 	mov	al, 0x20		; Load nonspecific EOI value (0x20) into register al
 	out	0x20, al		; Write EOI to PIC (port 0x20)
-	push 3
-	jmp exit;
+	mov ax, 3h
+	push ax
+	call exit;
 	
 KeyboardISR:
 	cli
