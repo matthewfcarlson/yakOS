@@ -1,6 +1,6 @@
 #include "YAKkernel.h"
 #include "clib.h"
-#define DEBUG 0
+#define DEBUG 1
 /* ----------------- TCB stuff ----------------- */
 typedef struct taskblock *TCBp;
 /* the TCB struct definition */
@@ -37,7 +37,6 @@ void YKRemoveFromList(TCBp task);
 
 void printTCB(void* ptcb);
 void SwitchContext();
-void SaveSPtoTCB();
 
 /* ----------------- Public kernel functions -----------------  */
 // - Initializes all required kernel data structures 

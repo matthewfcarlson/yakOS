@@ -13,11 +13,11 @@ TickISR:
 	push ds
 	
 	mov	ax, word [YKISRDepth]
-	test	ax, ax
+	test	ax, 0
 	jne TickISRSaved
 						;save the SP on the TCB since we are call depth zero
 	mov si, word [YKCurrentTask]
-	mov [si],sp			;move sp to the TCB
+	mov [si],sp			;move sp (the first variable) to the TCB
 	TickISRSaved:
 						
 	call YKEnterISR		;enter the ISR
@@ -49,8 +49,8 @@ ResetISR:
 	cli
 	mov	al, 0x20		; Load nonspecific EOI value (0x20) into register al
 	out	0x20, al		; Write EOI to PIC (port 0x20)
-	sti
-	jmp main;
+	push 3
+	jmp exit;
 	
 KeyboardISR:
 	cli

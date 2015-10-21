@@ -141,7 +141,9 @@ void YKIdleTask(){
 	while(1){
 		for (i = 0; i< 1000; i++);
 			++YKIdleCount;
-#line 101 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+
+		printString("Idling...\n");
+
 	}
 
 }
@@ -152,14 +154,26 @@ void YKNewTask(void* taskFunc, void* taskStack, int priority){
 	YKEnterMutex();
 	++YKTCBMallocIndex;
 	YKExitMutex();
-#line 119 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+
+
+	printString("\nBP at 0x");
+	printWord((int)taskStack);
+
+
+
+
 	*(newStackSP) =  64 ;
 	--newStackSP;
 	*(newStackSP) = 0;
 	--newStackSP;
 	*(newStackSP) = (int)taskFunc;
 	newStackSP = newStackSP - 8;
-#line 131 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+
+
+	printString("\nSP at 0x");
+	printWord((int)newStackSP);
+
+
 	newTask->stackPtr = (int*)newStackSP;
 
 
@@ -176,7 +190,9 @@ void YKNewTask(void* taskFunc, void* taskStack, int priority){
 }
 
 void YKRun(){
-#line 150 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+
+	printString("Starting Yak OS (c) 2015\n");
+
 	YKIsRunning = 1;
 	YKScheduler();
 
@@ -185,12 +201,20 @@ void YKRun(){
 
 void YKScheduler(){
 	YKEnterMutex();
-#line 163 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+
+	printString("Scheduler\n");
+	printTCB(YKReadyTasks);
+
+
 	if (YKReadyTasks != YKCurrentTask){
 
 		YKCurrentTask = YKReadyTasks;
 		++YKCtxSwCount;
-#line 172 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+
+		printString("Switching context to task#");
+		printInt(YKCurrentTask->priority);
+		printString("\n");
+
 		YKDispatcher();
 	}
 	YKExitMutex();
@@ -294,12 +318,19 @@ void YKRemoveFromList(TCBp task){
 void YKDelayTask(int ticks){
 	YKEnterMutex();
 	if (ticks > 0){
-#line 278 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+
+		printString("Delaying\n\n");
+
 		YKCurrentTask->delayTicks += ticks;
 	}
 	YKRemoveFromList(YKCurrentTask);
 	YKAddToSuspendedList(YKCurrentTask);
-#line 288 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+
+	printString("Current Ready Tasks:\n");
+	printTCB(YKReadyTasks);
+	printString("Calling Software delay interrupt\n");
+
+
 	asm("int 11h");
 
 	YKExitMutex();
