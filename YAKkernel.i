@@ -17,8 +17,8 @@ void YKDelayTask(int ticks);
 
 
 
-extern int YKCtxSwCount;
-extern int YKIdleCount;
+extern unsigned YKCtxSwCount;
+extern unsigned YKIdleCount;
 #line 2 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
 #line 1 "clib.h"
 
@@ -72,9 +72,9 @@ int YKTCBMallocIndex;
 int IdleStack[ 100 ];
 
 
-int YKCtxSwCount;
-int YKIdleCount;
-int YKISRDepth;
+unsigned YKCtxSwCount;
+unsigned YKIdleCount;
+unsigned YKISRDepth;
 int YKIsRunning;
 
 void YKAddToSuspendedList(TCBp task);
@@ -140,9 +140,7 @@ void YKIdleTask(){
 	while(1){
 		for (i = 0; i< 1000; i++);
 			++YKIdleCount;
-
-		printString("Idling...\n");
-
+#line 100 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
 	}
 
 }
@@ -153,26 +151,14 @@ void YKNewTask(void* taskFunc, void* taskStack, int priority){
 	YKEnterMutex();
 	++YKTCBMallocIndex;
 	YKExitMutex();
-
-
-	printString("\nBP at 0x");
-	printWord((int)taskStack);
-
-
-
-
+#line 118 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
 	*(newStackSP) =  64 ;
 	--newStackSP;
 	*(newStackSP) = 0;
 	--newStackSP;
 	*(newStackSP) = (int)taskFunc;
 	newStackSP = newStackSP - 8;
-
-
-	printString("\nSP at 0x");
-	printWord((int)newStackSP);
-
-
+#line 130 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
 	newTask->stackPtr = (int*)newStackSP;
 
 
@@ -189,9 +175,7 @@ void YKNewTask(void* taskFunc, void* taskStack, int priority){
 }
 
 void YKRun(){
-
-	printString("Starting Yak OS (c) 2015\n");
-
+#line 149 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
 	YKIsRunning = 1;
 	YKScheduler();
 
@@ -200,23 +184,14 @@ void YKRun(){
 
 void YKScheduler(){
 	YKEnterMutex();
-
-	printString("Scheduler\n");
-	printTCB(YKReadyTasks);
-
-
+#line 162 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
 	if (YKReadyTasks != YKCurrentTask){
 
 		YKCurrentTask = YKReadyTasks;
 		++YKCtxSwCount;
-
-		printString("Switching context to task#");
-		printInt(YKCurrentTask->priority);
-		printString("\n");
-
+#line 171 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
 		YKDispatcher();
 	}
-	YKExitMutex();
 }
 
 
@@ -244,12 +219,7 @@ void YKTickHandler(){
 		currTCB->delayTicks = currTCB->delayTicks -1 ;
 
 		if (currTCB->delayTicks <= 0){
-
-			printString("Adding task #");
-			printInt(currTCB->priority);
-			printString(" back to the ready list\n");
-
-
+#line 208 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
 			movingTCB = currTCB;
 			currTCB = currTCB->next;
 
@@ -317,19 +287,12 @@ void YKRemoveFromList(TCBp task){
 void YKDelayTask(int ticks){
 	YKEnterMutex();
 	if (ticks > 0){
-
-		printString("Delaying\n\n");
-
+#line 278 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
 		YKCurrentTask->delayTicks += ticks;
 	}
 	YKRemoveFromList(YKCurrentTask);
 	YKAddToSuspendedList(YKCurrentTask);
-
-	printString("Current Ready Tasks:\n");
-	printTCB(YKReadyTasks);
-	printString("Calling Software delay interrupt\n");
-
-
+#line 288 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
 	asm("int 11h");
 
 	YKExitMutex();

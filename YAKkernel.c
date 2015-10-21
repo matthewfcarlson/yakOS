@@ -1,6 +1,6 @@
 #include "YAKkernel.h"
 #include "clib.h"
-#define DEBUG 1
+#define DEBUG 0
 /* ----------------- TCB stuff ----------------- */
 typedef struct taskblock *TCBp;
 /* the TCB struct definition */
@@ -26,9 +26,9 @@ int  YKTCBMallocIndex;	/* the index of the current empty TCB in the array */
 int IdleStack[DEFAULTSTACKSIZE];
 
 /* ----------------- Global Variables ----------------- */
-int YKCtxSwCount; // - Global variable that tracks context switches 
-int YKIdleCount;  // - Global variable incremented by idle task 
-int YKISRDepth;
+unsigned YKCtxSwCount; // - Global variable that tracks context switches 
+unsigned YKIdleCount;  // - Global variable incremented by idle task 
+unsigned YKISRDepth;
 int YKIsRunning;
 /* ----------------- Private Kernel function declerations -----------------  */
 void YKAddToSuspendedList(TCBp task);
@@ -155,7 +155,7 @@ void YKRun(){
 void YKScheduler(){
 	YKEnterMutex();
 	#if DEBUG == 1
-	printString("Scheduler\n");
+	printString("Scheduler ");
 	printTCB(YKReadyTasks);
 	#endif
 	//if the new task to run is different
@@ -170,7 +170,6 @@ void YKScheduler(){
 		#endif
 		YKDispatcher();
 	}
-	YKExitMutex();
 }
 
 // - Begins or resumes execution of the next task
@@ -199,9 +198,11 @@ void YKTickHandler(){
 		//check if it needs to go to the readyList
 		if (currTCB->delayTicks <= 0){
 			//remove it from the list
+			#if DEBUG == 1
 			printString("Adding task #");
 			printInt(currTCB->priority);
 			printString(" back to the ready list\n");
+			#endif
 			
 			//Store the TCB before we move on to the next one
 			movingTCB = currTCB;

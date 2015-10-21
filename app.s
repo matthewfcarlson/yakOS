@@ -87,7 +87,7 @@ L_app_12:
 	; >>>>> YKEnterMutex(); 
 	call	YKEnterMutex
 	; >>>>> Line:	40
-	; >>>>> numCtxSwitches = 
+	; >>>>> numCtx 
 	mov	ax, word [YKCtxSwCount]
 	mov	word [bp-4], ax
 	; >>>>> Line:	41

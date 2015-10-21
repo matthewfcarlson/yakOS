@@ -25,5 +25,5 @@ void YKDelayTask(int ticks);
 
 
 //Global Variables extern since they are defined in the c code
-extern int YKCtxSwCount; // - Global variable that tracks context switches 
-extern int YKIdleCount;  // - Global variable incremented by idle task 
+extern unsigned YKCtxSwCount; // - Global variable that tracks context switches 
+extern unsigned YKIdleCount;  // - Global variable incremented by idle task 

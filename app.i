@@ -44,8 +44,8 @@ void YKDelayTask(int ticks);
 
 
 
-extern int YKCtxSwCount;
-extern int YKIdleCount;
+extern unsigned YKCtxSwCount;
+extern unsigned YKIdleCount;
 #line 9 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/lab4c_app.c"
 
 
