@@ -1,6 +1,14 @@
-#line 1 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/lab4c_app.c"
-#line 7 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/lab4c_app.c"
-#line 1 "clib.h"
+# 1 "lab4c_app.c"
+# 1 "<built-in>"
+# 1 "<command-line>"
+# 1 "lab4c_app.c"
+
+
+
+
+
+
+# 1 "clib.h" 1
 
 
 
@@ -25,9 +33,9 @@ void exit(unsigned char code);
 
 
 void signalEOI(void);
-#line 8 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/lab4c_app.c"
-#line 1 "YAKkernel.h"
-#line 12 "YAKkernel.h"
+# 8 "lab4c_app.c" 2
+# 1 "YAKkernel.h" 1
+# 12 "YAKkernel.h"
 void YKInitialize();
 void YKEnterMutex();
 void YKExitMutex();
@@ -46,11 +54,11 @@ void YKDelayTask(int ticks);
 
 extern unsigned YKCtxSwCount;
 extern unsigned YKIdleCount;
-#line 9 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/lab4c_app.c"
+# 9 "lab4c_app.c" 2
 
 
 
-int TaskStack[ 256 ];
+int TaskStack[256];
 
 void Task(void);
 
@@ -59,7 +67,7 @@ void main(void)
     YKInitialize();
 
     printString("Creating task...\n");
-    YKNewTask(Task, (void *) &TaskStack[ 256 ], 0);
+    YKNewTask(Task, (void *) &TaskStack[256], 0);
 
     printString("Starting kernel...\n");
     YKRun();
