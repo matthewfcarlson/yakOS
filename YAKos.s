@@ -13,7 +13,7 @@ TickISR:
 	push ds
 	
 	mov	ax, word [YKISRDepth]
-	test	ax, 0
+	test	ax, ax ;Not siure why ax,ax
 	jne TickISRSaved
 						;save the SP on the TCB since we are call depth zero
 	mov si, word [YKCurrentTask]
@@ -65,7 +65,7 @@ KeyboardISR:
 	push ds
 	
 	mov	ax, word [YKISRDepth]
-	test	ax, 0
+	test	ax, ax
 	jne KeyboardISRSaved
 						;save the SP on the TCB since we are call depth zero
 	mov si, word [YKCurrentTask]
