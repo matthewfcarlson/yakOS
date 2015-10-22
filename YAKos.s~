@@ -64,14 +64,6 @@ KeyboardISR:
 	push es
 	push ds
 	
-	mov	ax, word [YKISRDepth]
-	test	ax, 0
-	jne KeyboardISRSaved
-						;save the SP on the TCB since we are call depth zero
-	mov si, word [YKCurrentTask]
-	mov [si],sp			;move sp (the first variable) to the TCB
-	KeyboardISRSaved:
-
 	call YKEnterISR
 	sti
 	

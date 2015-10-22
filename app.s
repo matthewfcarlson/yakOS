@@ -22,7 +22,7 @@ L_app_4:
 	call	printString
 	add	sp, 2
 	; >>>>> Line:	21
-	; >>>>> YKNewTask(Task, (void *) &TaskStack[ 256 ], 0); 
+	; >>>>> um 
 	xor	ax, ax
 	push	ax
 	mov	ax, (TaskStack+512)
@@ -87,7 +87,7 @@ L_app_12:
 	; >>>>> YKEnterMutex(); 
 	call	YKEnterMutex
 	; >>>>> Line:	40
-	; >>>>> numCtx 
+	; >>>>> numCtxSwitches = YKCtxSwCount; 
 	mov	ax, word [YKCtxSwCount]
 	mov	word [bp-4], ax
 	; >>>>> Line:	41
@@ -107,7 +107,7 @@ L_app_12:
 	call	printString
 	add	sp, 2
 	; >>>>> Line:	46
-	; >>>>> printUInt(numCtxSwitches); 
+	; >>>>> printUInt(num 
 	push	word [bp-4]
 	call	printUInt
 	add	sp, 2

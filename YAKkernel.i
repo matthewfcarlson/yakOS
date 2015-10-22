@@ -1,6 +1,9 @@
-#line 1 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
-#line 1 "YAKkernel.h"
-#line 12 "YAKkernel.h"
+# 1 "YAKkernel.c"
+# 1 "<built-in>"
+# 1 "<command-line>"
+# 1 "YAKkernel.c"
+# 1 "YAKkernel.h" 1
+# 12 "YAKkernel.h"
 void YKInitialize();
 void YKEnterMutex();
 void YKExitMutex();
@@ -19,8 +22,8 @@ void YKDelayTask(int ticks);
 
 extern unsigned YKCtxSwCount;
 extern unsigned YKIdleCount;
-#line 2 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
-#line 1 "clib.h"
+# 2 "YAKkernel.c" 2
+# 1 "clib.h" 1
 
 
 
@@ -45,7 +48,7 @@ void exit(unsigned char code);
 
 
 void signalEOI(void);
-#line 3 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+# 3 "YAKkernel.c" 2
 
 
 typedef struct taskblock *TCBp;
@@ -65,11 +68,11 @@ TCBp YKCurrentTask;
 TCBp YKReadyTasks;
 TCBp YKSuspendedTasks;
 
-TCB YKTCBs[ 5 +1];
+TCB YKTCBs[5 +1];
 int YKTCBMallocIndex;
 
 
-int IdleStack[ 100 ];
+int IdleStack[100];
 
 
 unsigned YKCtxSwCount;
@@ -89,238 +92,258 @@ void SwitchContext();
 
 
 void YKInitialize(){
-	YKEnterMutex();
+ YKEnterMutex();
 
 
-	YKCtxSwCount = 0;
-	YKISRDepth = 0;
-	YKIdleCount = 0;
-	YKReadyTasks =  0 ;
-	YKSuspendedTasks =  0 ;
+ YKCtxSwCount = 0;
+ YKISRDepth = 0;
+ YKIdleCount = 0;
+ YKReadyTasks = 0;
+ YKSuspendedTasks = 0;
 
-	YKCurrentTask =  0 ;
-	YKTCBMallocIndex = 0;
-	YKIsRunning = 0;
+ YKCurrentTask = 0;
+ YKTCBMallocIndex = 0;
+ YKIsRunning = 0;
 
 
-	YKNewTask(YKIdleTask, &IdleStack[ 100 ],255);
-	YKExitMutex();
+ YKNewTask(YKIdleTask, &IdleStack[100],255);
+ YKExitMutex();
 }
 
 
 void YKEnterMutex(){
-	asm("cli");
+ asm("cli");
 
 }
 
 void YKExitMutex(){
-	asm("sti");
+ asm("sti");
 }
 
 
 void YKEnterISR(){
 
-	++YKISRDepth;
+ ++YKISRDepth;
 }
 
 
 void YKExitISR(){
-	--YKISRDepth;
+ --YKISRDepth;
 
 
-	if (YKISRDepth == 0){
+ if (YKISRDepth == 0){
 
-		YKScheduler();
-	}
+  YKScheduler();
+ }
 
 }
 
 void YKIdleTask(){
-	int i = 0;
+ int i = 0;
 
-	YKExitMutex();
-	while(1){
+ YKExitMutex();
+ while(1){
 
-			++YKIdleCount;
-#line 102 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
-	}
+   ++YKIdleCount;
+
+
+
+ }
 
 }
 
 void YKNewTask(void* taskFunc, void* taskStack, int priority){
-	TCBp newTask = &YKTCBs[YKTCBMallocIndex];
-	int* newStackSP = (int*)taskStack;
-	YKEnterMutex();
-	++YKTCBMallocIndex;
-	YKExitMutex();
-#line 120 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
-	*(newStackSP) =  64 ;
-	--newStackSP;
-	*(newStackSP) = 0;
-	--newStackSP;
-	*(newStackSP) = (int)taskFunc;
-	newStackSP = newStackSP - 8;
-#line 132 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
-	newTask->stackPtr = (int*)newStackSP;
+ TCBp newTask = &YKTCBs[YKTCBMallocIndex];
+ int* newStackSP = (int*)taskStack;
+ YKEnterMutex();
+ ++YKTCBMallocIndex;
+ YKExitMutex();
+# 120 "YAKkernel.c"
+ *(newStackSP) = 64;
+ --newStackSP;
+ *(newStackSP) = 0;
+ --newStackSP;
+ *(newStackSP) = (int)taskFunc;
+ newStackSP = newStackSP - 8;
 
 
 
-	newTask->priority = priority;
-	newTask->next =  0 ;
-	newTask->prev =  0 ;
-	newTask->delayTicks = 0;
-	newTask->state = 1;
 
-	YKAddToReadyList(newTask);
-	if (YKIsRunning)
-		YKScheduler();
+
+
+ newTask->stackPtr = (int*)newStackSP;
+
+
+
+ newTask->priority = priority;
+ newTask->next = 0;
+ newTask->prev = 0;
+ newTask->delayTicks = 0;
+ newTask->state = 1;
+
+ YKAddToReadyList(newTask);
+ if (YKIsRunning)
+  YKScheduler();
 }
 
 void YKRun(){
-#line 151 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
-	YKIsRunning = 1;
-	YKScheduler();
+
+
+
+ YKIsRunning = 1;
+ YKScheduler();
 
 
 }
 
 void YKScheduler(){
-	YKEnterMutex();
-#line 164 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
-	if (YKReadyTasks != YKCurrentTask){
+ YKEnterMutex();
 
-		YKCurrentTask = YKReadyTasks;
-		++YKCtxSwCount;
-#line 174 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
-	}
-	YKDispatcher();
+
+
+
+
+ if (YKReadyTasks != YKCurrentTask){
+
+  YKCurrentTask = YKReadyTasks;
+  ++YKCtxSwCount;
+
+
+
+
+
+
+ }
+ YKDispatcher();
 }
 
 
 void YKDispatcher(){
 
-	void* newSP = YKCurrentTask->stackPtr;
+ void* newSP = YKCurrentTask->stackPtr;
 
-	SwitchContext();
+ SwitchContext();
 }
 
 
 
 void YKTickHandler(){
-	static int tickCount = 0;
-	TCBp currTCB = YKSuspendedTasks;
-	TCBp movingTCB =  0 ;
+ static int tickCount = 0;
+ TCBp currTCB = YKSuspendedTasks;
+ TCBp movingTCB = 0;
 
-	++tickCount;
-	printString("\nTick ");
-	printInt(tickCount);
-	printString("\n");
+ ++tickCount;
+ printString("\nTick ");
+ printInt(tickCount);
+ printString("\n");
 
 
-	while (currTCB !=  0 ){
-		currTCB->delayTicks = currTCB->delayTicks -1 ;
+ while (currTCB != 0){
+  currTCB->delayTicks = currTCB->delayTicks -1 ;
 
-		if (currTCB->delayTicks <= 0){
-#line 211 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
-			movingTCB = currTCB;
-			currTCB = currTCB->next;
+  if (currTCB->delayTicks <= 0){
+# 211 "YAKkernel.c"
+   movingTCB = currTCB;
+   currTCB = currTCB->next;
 
-			YKRemoveFromList(movingTCB);
-			YKAddToReadyList(movingTCB);
-		}
-		else{
-			currTCB = currTCB->next;
-		}
+   YKRemoveFromList(movingTCB);
+   YKAddToReadyList(movingTCB);
+  }
+  else{
+   currTCB = currTCB->next;
+  }
 
-	}
+ }
 
 }
 
 
 
 void YKAddToReadyList(TCBp newTask){
-	int priority = newTask->priority;
-	TCBp taskListPtr = YKReadyTasks;
+ int priority = newTask->priority;
+ TCBp taskListPtr = YKReadyTasks;
 
-	if (YKReadyTasks ==  0 )
-		YKReadyTasks = newTask;
+ if (YKReadyTasks == 0)
+  YKReadyTasks = newTask;
 
-	else if (YKReadyTasks->priority > priority){
-		newTask->next = YKReadyTasks;
-		YKReadyTasks->prev = newTask;
-		YKReadyTasks = newTask;
-	}
+ else if (YKReadyTasks->priority > priority){
+  newTask->next = YKReadyTasks;
+  YKReadyTasks->prev = newTask;
+  YKReadyTasks = newTask;
+ }
 
-	else{
+ else{
 
-		while (taskListPtr->next !=  0  && taskListPtr->next->priority > priority){
-			taskListPtr = taskListPtr -> next;
-		}
+  while (taskListPtr->next != 0 && taskListPtr->next->priority > priority){
+   taskListPtr = taskListPtr -> next;
+  }
 
-		newTask-> next = taskListPtr -> next;
-		taskListPtr->next = newTask;
-	}
+  newTask-> next = taskListPtr -> next;
+  taskListPtr->next = newTask;
+ }
 }
 
 void YKAddToSuspendedList(TCBp task){
-	task->next = YKSuspendedTasks;
-	YKSuspendedTasks->prev = task;
-	YKSuspendedTasks = task;
+ task->next = YKSuspendedTasks;
+ YKSuspendedTasks->prev = task;
+ YKSuspendedTasks = task;
 }
 
 
 void YKRemoveFromList(TCBp task){
-	if (YKReadyTasks == task){
-		YKReadyTasks = task->next;
-	}
-	else if (YKSuspendedTasks = task){
-		YKSuspendedTasks = task->next;
-	}
+ if (YKReadyTasks == task){
+  YKReadyTasks = task->next;
+ }
+ else if (YKSuspendedTasks = task){
+  YKSuspendedTasks = task->next;
+ }
 
-	if (task->next !=  0 ){
-		task->next->prev = task->prev;
-	}
-	if (task->prev !=  0 ){
-		task->prev->next = task->next;
-	}
+ if (task->next != 0){
+  task->next->prev = task->prev;
+ }
+ if (task->prev != 0){
+  task->prev->next = task->next;
+ }
 }
 
 
 void YKDelayTask(int ticks){
-	YKEnterMutex();
-	if (ticks > 0){
-#line 281 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
-		YKCurrentTask->delayTicks += ticks;
-	}
-
-	YKRemoveFromList(YKCurrentTask);
-	YKAddToSuspendedList(YKCurrentTask);
+ YKEnterMutex();
+ if (ticks > 0){
 
 
-	asm("int 11h");
 
-	YKExitMutex();
+  YKCurrentTask->delayTicks += ticks;
+ }
+
+ YKRemoveFromList(YKCurrentTask);
+ YKAddToSuspendedList(YKCurrentTask);
+
+
+ asm("int 11h");
+
+ YKExitMutex();
 
 }
 
 
 void printCurrentTask(){
-	printTCB(YKCurrentTask);
+ printTCB(YKCurrentTask);
 }
 void printTCB(void* ptcb){
-	TCBp tcb = (TCBp) ptcb;
+ TCBp tcb = (TCBp) ptcb;
 
-	printString("TCB(");
-	printInt(tcb->priority);
-	printString("/");
-	printInt(tcb->delayTicks);
-	printString(":0x");
-	printWord((int)tcb->stackPtr);
-	printString(")");
-	if (tcb->next !=  0 ){
-		printString("->");
-		printTCB(tcb->next);
-	}
-	else
-		printString(" \n");
+ printString("TCB(");
+ printInt(tcb->priority);
+ printString("/");
+ printInt(tcb->delayTicks);
+ printString(":0x");
+ printWord((int)tcb->stackPtr);
+ printString(")");
+ if (tcb->next != 0){
+  printString("->");
+  printTCB(tcb->next);
+ }
+ else
+  printString(" \n");
 }
