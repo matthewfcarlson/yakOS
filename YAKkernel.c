@@ -96,7 +96,7 @@ void YKIdleTask(){
 	while(1){ //Just spin in idle and count to 1000
 		//for (i = 0; i< 2; i++);
 			++YKIdleCount;
-		#if DEBUG == 1
+		#if DEBUG == 2
 		printString("Idling...\n");
 		#endif
 	}
@@ -158,7 +158,7 @@ void YKScheduler(){
 	YKEnterMutex();
 	#if DEBUG == 1
 	printString("Scheduler ");
-	printTCB(YKReadyTasks);
+	//printTCB(YKReadyTasks);
 	#endif
 	//if the new task to run is different
 	if (YKReadyTasks != YKCurrentTask){
@@ -227,11 +227,13 @@ void YKTickHandler(){
 void YKAddToReadyList(TCBp newTask){
 	int priority = newTask->priority;
 	TCBp taskListPtr = YKReadyTasks;
+	TCBp tst = YKReadyTasks; 
 	//create the list if it's empty
-	if (YKReadyTasks == NULL)
+	if (YKReadyTasks == NULL){
 		YKReadyTasks = newTask;
-	//append to the list
-	else if (YKReadyTasks->priority > priority){
+		//append to the list
+	}
+	else if(YKReadyTasks->priority > priority){
 		newTask->next = YKReadyTasks;
 		YKReadyTasks->prev = newTask;
 		YKReadyTasks = newTask;
@@ -239,12 +241,13 @@ void YKAddToReadyList(TCBp newTask){
 	//stick it somewhere in there
 	else{
 		//TODO: optimize this somehow and make easier to understand
-		while (taskListPtr->next != NULL && taskListPtr->next->priority > priority){
+		while (taskListPtr->next != NULL && taskListPtr->next->priority < priority){
 			taskListPtr = taskListPtr -> next;
 		}
 		//TODO: use prev as well as next to make double linked list
 		newTask-> next = taskListPtr -> next;
 		taskListPtr->next = newTask;
+
 	}
 }
 //Adds a task to the suspeneded list

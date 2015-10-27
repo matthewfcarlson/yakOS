@@ -13,7 +13,7 @@ TickISR:
 	push ds
 	
 	mov	ax, word [YKISRDepth]
-	test	ax, 0
+	cmp	ax, 0
 	jne TickISRSaved
 						;save the SP on the TCB since we are call depth zero
 	mov si, word [YKCurrentTask]
@@ -131,7 +131,7 @@ SaveSPtoTCB:
 	ret					;return
 	
 
-;This function is callewd by the dispatcher to swtich to the current task
+;This function is called by the dispatcher to swtich to the current task
 SwitchContext:
 	;we put the address we need in a local variable in YKDispatch
 	mov sp, [bp-2] ;this is the stack pointer
