@@ -158,7 +158,14 @@ void YKNewTask(void* taskFunc, void* taskStack, int priority){
  YKEnterMutex();
  ++YKTCBMallocIndex;
  YKExitMutex();
-# 120 "YAKkernel.c"
+
+
+ printString("\nBP at 0x");
+ printWord((int)taskStack);
+
+
+
+
  *(newStackSP) = 64;
  --newStackSP;
  *(newStackSP) = 0;
@@ -167,8 +174,8 @@ void YKNewTask(void* taskFunc, void* taskStack, int priority){
  newStackSP = newStackSP - 8;
 
 
-
-
+ printString("\nSP at 0x");
+ printWord((int)newStackSP);
 
 
  newTask->stackPtr = (int*)newStackSP;
@@ -188,7 +195,7 @@ void YKNewTask(void* taskFunc, void* taskStack, int priority){
 
 void YKRun(){
 
-
+ printString("Starting Yak OS (c) 2015\n");
 
  YKIsRunning = 1;
  YKScheduler();
@@ -197,9 +204,11 @@ void YKRun(){
 }
 
 void YKScheduler(){
+ TCBp tst = YKReadyTasks;
+ TCBp tst2 = YKSuspendedTasks;
  YKEnterMutex();
 
-
+ printString("Scheduler ");
 
 
 
@@ -208,9 +217,24 @@ void YKScheduler(){
   YKCurrentTask = YKReadyTasks;
   ++YKCtxSwCount;
 
-
-
-
+  printString("Switching context to task#");
+  printInt(YKCurrentTask->priority);
+  printString("\n");
+  printString("\ntask ready list: \n");
+  while(tst->next != 0){
+    printInt(tst->priority);
+    printString("\n");
+    tst = tst->next;
+   }
+  printString("\n");
+  printString("\ntask suspeneded list: \n");
+  printInt(tst2->priority);
+  printString("\n");
+  while(tst2->next != 0){
+   tst2 = tst2->next;
+    printInt(tst2->priority);
+    printString("\n");
+   }
 
 
  }
@@ -230,19 +254,26 @@ void YKDispatcher(){
 void YKTickHandler(){
  static int tickCount = 0;
  TCBp currTCB = YKSuspendedTasks;
+ TCBp tst2 = YKSuspendedTasks;
  TCBp movingTCB = 0;
 
  ++tickCount;
  printString("\nTick ");
  printInt(tickCount);
  printString("\n");
-
-
+# 224 "YAKkernel.c"
  while (currTCB != 0){
   currTCB->delayTicks = currTCB->delayTicks -1 ;
 
   if (currTCB->delayTicks <= 0){
-# 211 "YAKkernel.c"
+
+
+   printString("Adding task #");
+   printInt(currTCB->priority);
+   printString(" back to the ready list\n");
+
+
+
    movingTCB = currTCB;
    currTCB = currTCB->next;
 
@@ -263,10 +294,11 @@ void YKAddToReadyList(TCBp newTask){
  int priority = newTask->priority;
  TCBp taskListPtr = YKReadyTasks;
 
- if (YKReadyTasks == 0)
+ if (YKReadyTasks == 0){
   YKReadyTasks = newTask;
 
- else if (YKReadyTasks->priority > priority){
+ }
+ else if(YKReadyTasks->priority > priority){
   newTask->next = YKReadyTasks;
   YKReadyTasks->prev = newTask;
   YKReadyTasks = newTask;
@@ -274,19 +306,32 @@ void YKAddToReadyList(TCBp newTask){
 
  else{
 
-  while (taskListPtr->next != 0 && taskListPtr->next->priority > priority){
+  while (taskListPtr->next != 0 && taskListPtr->next->priority < priority){
    taskListPtr = taskListPtr -> next;
   }
 
   newTask-> next = taskListPtr -> next;
   taskListPtr->next = newTask;
+
  }
 }
 
 void YKAddToSuspendedList(TCBp task){
- task->next = YKSuspendedTasks;
- YKSuspendedTasks->prev = task;
- YKSuspendedTasks = task;
+
+ printString("adding task to suspeneded list: ");
+ printInt(task->priority);
+ printString("\n");
+
+ if(YKSuspendedTasks == 0){
+  YKSuspendedTasks = task;
+  task->next = 0;
+  task->prev = 0;
+ }
+ else{
+  task->next = YKSuspendedTasks;
+  YKSuspendedTasks->prev = task;
+  YKSuspendedTasks = task;
+ }
 }
 
 
@@ -311,7 +356,7 @@ void YKDelayTask(int ticks){
  YKEnterMutex();
  if (ticks > 0){
 
-
+  printString("Delaying\n\n");
 
   YKCurrentTask->delayTicks += ticks;
  }

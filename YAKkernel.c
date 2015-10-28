@@ -1,6 +1,6 @@
 #include "YAKkernel.h"
 #include "clib.h"
-#define DEBUG 0
+#define DEBUG 1
 /* ----------------- TCB stuff ----------------- */
 typedef struct taskblock *TCBp;
 /* the TCB struct definition */
@@ -155,6 +155,8 @@ void YKRun(){
 }
 // - Determines the highest priority ready task 
 void YKScheduler(){
+	TCBp tst = YKReadyTasks;
+	TCBp tst2 =  YKSuspendedTasks; 
 	YKEnterMutex();
 	#if DEBUG == 1
 	printString("Scheduler ");
@@ -169,6 +171,21 @@ void YKScheduler(){
 		printString("Switching context to task#");
 		printInt(YKCurrentTask->priority);
 		printString("\n");
+		printString("\ntask ready list: \n"); 
+		while(tst->next != NULL){
+				printInt(tst->priority);
+				printString("\n");
+				tst = tst->next; 
+			}
+		printString("\n");
+		printString("\ntask suspeneded list: \n");
+		printInt(tst2->priority);
+		printString("\n"); 	
+		while(tst2->next != NULL){
+			tst2 = tst2->next; 
+				printInt(tst2->priority);
+				printString("\n");
+			}
 		#endif
 		
 	}
@@ -188,13 +205,21 @@ void YKDispatcher(){
 void YKTickHandler(){
 	static int tickCount = 0;
 	TCBp currTCB = YKSuspendedTasks;
+	TCBp tst2 = YKSuspendedTasks; 
 	TCBp movingTCB = NULL;
 	
 	++tickCount;
 	printString("\nTick ");
 	printInt(tickCount);
 	printString("\n");
-
+	// #if DEBUG == 1
+	// printString("\nPrinting suspeneded list (TickHandler)\n");
+	// while(tst2->next != NULL){
+	// 			printInt(tst2->priority);
+	// 			printString("\n");
+	// 			tst2 = tst2->next; 
+	// 		}
+	// #endif
 	//Decrement the wait list
 	while (currTCB != NULL){
 		currTCB->delayTicks = currTCB->delayTicks -1 ;
@@ -227,7 +252,6 @@ void YKTickHandler(){
 void YKAddToReadyList(TCBp newTask){
 	int priority = newTask->priority;
 	TCBp taskListPtr = YKReadyTasks;
-	TCBp tst = YKReadyTasks; 
 	//create the list if it's empty
 	if (YKReadyTasks == NULL){
 		YKReadyTasks = newTask;
@@ -252,9 +276,21 @@ void YKAddToReadyList(TCBp newTask){
 }
 //Adds a task to the suspeneded list
 void YKAddToSuspendedList(TCBp task){
-	task->next = YKSuspendedTasks;
-	YKSuspendedTasks->prev = task;
-	YKSuspendedTasks = task;
+	#if DEBUG == 1
+	printString("adding task to suspeneded list: ");
+	printInt(task->priority);
+	printString("\n"); 
+	#endif
+	if(YKSuspendedTasks == NULL){
+		YKSuspendedTasks = task; 
+		task->next = NULL;
+		task->prev = NULL;
+	}
+	else{
+		task->next = YKSuspendedTasks;
+		YKSuspendedTasks->prev = task;
+		YKSuspendedTasks = task;
+	}
 }
 
 //Removes it from whatever list it's in
