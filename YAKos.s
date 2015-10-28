@@ -98,7 +98,6 @@ KeyboardISR:
 SwitchTaskISR:
 	cli				;this is atomic so no more interrupts for a bit
 	
-	;TODO save the SP to the current task TCB
 	;TODO: create a function that pushes and pops context in the same way
 	push ax
 	push bx
@@ -117,7 +116,7 @@ SwitchTaskISR:
 	out	0x20, al		; Write EOI to PIC (port 0x20)
 	
 	;Call the scheduler
-	call YKScheduler;
+	call YKScheduler
 	jmp main			; this should never be called
 	
 	

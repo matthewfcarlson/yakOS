@@ -5,40 +5,70 @@
 L_app_2:
 	DB	"Starting kernel...",0xA,0
 L_app_1:
-	DB	"Creating task...",0xA,0
+	DB	"Creating tasks...",0xA,0
 	ALIGN	2
 main:
-	; >>>>> Line:	17
+	; >>>>> Line:	26
 	; >>>>> { 
 	jmp	L_app_3
 L_app_4:
-	; >>>>> Line:	18
+	; >>>>> Line:	27
 	; >>>>> YKInitialize(); 
 	call	YKInitialize
-	; >>>>> Line:	20
-	; >>>>> printString("Creating task...\n"); 
+	; >>>>> Line:	29
+	; >>>>> printString("Creating tasks...\n"); 
 	mov	ax, L_app_1
 	push	ax
 	call	printString
 	add	sp, 2
-	; >>>>> Line:	21
-	; >>>>> um 
-	xor	ax, ax
+	; >>>>> Line:	30
+	; >>>>> YKNewTask(ATask, (void *) &AStk[ 256 ], 3); 
+	mov	ax, 3
 	push	ax
-	mov	ax, (TaskStack+512)
+	mov	ax, (AStk+512)
 	push	ax
-	mov	ax, Task
+	mov	ax, ATask
 	push	ax
 	call	YKNewTask
 	add	sp, 6
-	; >>>>> Line:	23
+	; >>>>> Line:	31
+	; >>>>> YKNewTask(BTask, (void *) &BStk[ 256 ], 5); 
+	mov	ax, 5
+	push	ax
+	mov	ax, (BStk+512)
+	push	ax
+	mov	ax, BTask
+	push	ax
+	call	YKNewTask
+	add	sp, 6
+	; >>>>> Line:	32
+	; >>>>> YKNewTask(CTask, (void *) &CStk[ 256 ], 7); 
+	mov	ax, 7
+	push	ax
+	mov	ax, (CStk+512)
+	push	ax
+	mov	ax, CTask
+	push	ax
+	call	YKNewTask
+	add	sp, 6
+	; >>>>> Line:	33
+	; >>>>> YKNewTask(DTask, (void *) &DStk[ 256 ], 8); 
+	mov	ax, 8
+	push	ax
+	mov	ax, (DStk+512)
+	push	ax
+	mov	ax, DTask
+	push	ax
+	call	YKNewTask
+	add	sp, 6
+	; >>>>> Line:	35
 	; >>>>> printString("Starting kernel...\n"); 
 	mov	ax, L_app_2
 	push	ax
 	call	printString
 	add	sp, 2
-	; >>>>> Line:	24
-	; >>>>> YKRun(); 
+	; >>>>> Line:	36
+	; >>>>> YK 
 	call	YKRun
 	mov	sp, bp
 	pop	bp
@@ -47,98 +77,180 @@ L_app_3:
 	push	bp
 	mov	bp, sp
 	jmp	L_app_4
-L_app_9:
-	DB	" context switches! YKIdleCount is ",0
-L_app_8:
-	DB	"Task running after ",0
 L_app_7:
-	DB	"Delaying task...",0xA,0
+	DB	"Task A, delaying 2.",0xA,0
 L_app_6:
-	DB	"Task started.",0xA,0
+	DB	"Task A started.",0xA,0
 	ALIGN	2
-Task:
-	; >>>>> Line:	28
+ATask:
+	; >>>>> Line:	40
 	; >>>>> { 
-	jmp	L_app_10
-L_app_11:
-	; >>>>> Line:	32
-	; >>>>> printString("Task started.\n"); 
+	jmp	L_app_8
+L_app_9:
+	; >>>>> Line:	41
+	; >>>>> printString("Task A started.\n"); 
 	mov	ax, L_app_6
 	push	ax
 	call	printString
 	add	sp, 2
-	; >>>>> Line:	33
+	; >>>>> Line:	42
 	; >>>>> while (1) 
-	jmp	L_app_13
-L_app_12:
-	; >>>>> Line:	35
-	; >>>>> printString("Delaying task...\n"); 
+	jmp	L_app_11
+L_app_10:
+	; >>>>> Line:	44
+	; >>>>> printString("Task A, delaying 2.\n"); 
 	mov	ax, L_app_7
 	push	ax
 	call	printString
 	add	sp, 2
-	; >>>>> Line:	37
+	; >>>>> Line:	45
 	; >>>>> YKDelayTask(2); 
 	mov	ax, 2
 	push	ax
 	call	YKDelayTask
 	add	sp, 2
-	; >>>>> Line:	39
-	; >>>>> YKEnterMutex(); 
-	call	YKEnterMutex
-	; >>>>> Line:	40
-	; >>>>> numCtxSwitches = YKCtxSwCount; 
-	mov	ax, word [YKCtxSwCount]
-	mov	word [bp-4], ax
-	; >>>>> Line:	41
-	; >>>>> idleCount = YKIdleCount; 
-	mov	ax, word [YKIdleCount]
-	mov	word [bp-2], ax
-	; >>>>> Line:	42
-	; >>>>> YKIdleCount = 0; 
-	mov	word [YKIdleCount], 0
-	; >>>>> Line:	43
-	; >>>>> YKExitMutex(); 
-	call	YKExitMutex
-	; >>>>> Line:	45
-	; >>>>> printString("Task running after "); 
-	mov	ax, L_app_8
-	push	ax
-	call	printString
-	add	sp, 2
-	; >>>>> Line:	46
-	; >>>>> printUInt(num 
-	push	word [bp-4]
-	call	printUInt
-	add	sp, 2
-	; >>>>> Line:	47
-	; >>>>> printString(" context switches! YKIdleCount is "); 
-	mov	ax, L_app_9
-	push	ax
-	call	printString
-	add	sp, 2
-	; >>>>> Line:	48
-	; >>>>> printUInt(idleCount); 
-	push	word [bp-2]
-	call	printUInt
-	add	sp, 2
-	; >>>>> Line:	49
-	; >>>>> printString(".\n"); 
-	mov	ax, (L_app_1+15)
-	push	ax
-	call	printString
-	add	sp, 2
-L_app_13:
-	jmp	L_app_12
-L_app_14:
+L_app_11:
+	jmp	L_app_10
+L_app_12:
 	mov	sp, bp
 	pop	bp
 	ret
-L_app_10:
+L_app_8:
 	push	bp
 	mov	bp, sp
-	sub	sp, 4
-	jmp	L_app_11
+	jmp	L_app_9
+L_app_15:
+	DB	"Task B, delaying 3.",0xA,0
+L_app_14:
+	DB	"Task B started.",0xA,0
 	ALIGN	2
-TaskStack:
+BTask:
+	; >>>>> Line:	50
+	; >>>>> { 
+	jmp	L_app_16
+L_app_17:
+	; >>>>> Line:	51
+	; >>>>> printString("Task B started.\n"); 
+	mov	ax, L_app_14
+	push	ax
+	call	printString
+	add	sp, 2
+	; >>>>> Line:	52
+	; >>>>> while (1) 
+	jmp	L_app_19
+L_app_18:
+	; >>>>> Line:	54
+	; >>>>> printString("Task B, delaying 3.\n"); 
+	mov	ax, L_app_15
+	push	ax
+	call	printString
+	add	sp, 2
+	; >>>>> Line:	55
+	; >>>>> YKDelayTask(3); 
+	mov	ax, 3
+	push	ax
+	call	YKDelayTask
+	add	sp, 2
+L_app_19:
+	jmp	L_app_18
+L_app_20:
+	mov	sp, bp
+	pop	bp
+	ret
+L_app_16:
+	push	bp
+	mov	bp, sp
+	jmp	L_app_17
+L_app_23:
+	DB	"Task C, delaying 5.",0xA,0
+L_app_22:
+	DB	"Task C started.",0xA,0
+	ALIGN	2
+CTask:
+	; >>>>> Line:	60
+	; >>>>> { 
+	jmp	L_app_24
+L_app_25:
+	; >>>>> Line:	61
+	; >>>>> printString("Task C started.\n"); 
+	mov	ax, L_app_22
+	push	ax
+	call	printString
+	add	sp, 2
+	; >>>>> Line:	62
+	; >>>>> while (1) 
+	jmp	L_app_27
+L_app_26:
+	; >>>>> Line:	64
+	; >>>>> printString("Task C, delaying 5.\n"); 
+	mov	ax, L_app_23
+	push	ax
+	call	printString
+	add	sp, 2
+	; >>>>> Line:	65
+	; >>>>> YKDelayTask(5); 
+	mov	ax, 5
+	push	ax
+	call	YKDelayTask
+	add	sp, 2
+L_app_27:
+	jmp	L_app_26
+L_app_28:
+	mov	sp, bp
+	pop	bp
+	ret
+L_app_24:
+	push	bp
+	mov	bp, sp
+	jmp	L_app_25
+L_app_31:
+	DB	"Task D, delaying 10.",0xA,0
+L_app_30:
+	DB	"Task D started.",0xA,0
+	ALIGN	2
+DTask:
+	; >>>>> Line:	70
+	; >>>>> { 
+	jmp	L_app_32
+L_app_33:
+	; >>>>> Line:	71
+	; >>>>> printString 
+	mov	ax, L_app_30
+	push	ax
+	call	printString
+	add	sp, 2
+	; >>>>> Line:	72
+	; >>>>> while (1) 
+	jmp	L_app_35
+L_app_34:
+	; >>>>> Line:	74
+	; >>>>> printString("Task D, delaying 10.\n"); 
+	mov	ax, L_app_31
+	push	ax
+	call	printString
+	add	sp, 2
+	; >>>>> Line:	75
+	; >>>>> YKDelayTask(10); 
+	mov	ax, 10
+	push	ax
+	call	YKDelayTask
+	add	sp, 2
+L_app_35:
+	jmp	L_app_34
+L_app_36:
+	mov	sp, bp
+	pop	bp
+	ret
+L_app_32:
+	push	bp
+	mov	bp, sp
+	jmp	L_app_33
+	ALIGN	2
+AStk:
+	TIMES	512 db 0
+BStk:
+	TIMES	512 db 0
+CStk:
+	TIMES	512 db 0
+DStk:
 	TIMES	512 db 0

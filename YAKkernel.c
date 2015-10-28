@@ -97,7 +97,7 @@ void YKIdleTask(){
 		//for (i = 0; i< 2; i++);
 			++YKIdleCount;
 		#if DEBUG == 1
-		printString("Idling...\n");
+		//printString("Idling...\n");
 		#endif
 	}
 	
@@ -157,8 +157,10 @@ void YKRun(){
 void YKScheduler(){
 	YKEnterMutex();
 	#if DEBUG == 1
-	printString("Scheduler ");
+	printString("Ready Tasks:  ");
 	printTCB(YKReadyTasks);
+	printString("Suspended Tasks:  ");
+	printTCB(YKSuspendedTasks);
 	#endif
 	//if the new task to run is different
 	if (YKReadyTasks != YKCurrentTask){
@@ -210,9 +212,10 @@ void YKTickHandler(){
 			//Store the TCB before we move on to the next one
 			movingTCB = currTCB;
 			currTCB = currTCB->next;			
-			
+			YKEnterMutex();
 			YKRemoveFromList(movingTCB);
 			YKAddToReadyList(movingTCB);
+			YKExitMutex();
 		}
 		else{
 			currTCB = currTCB->next;
@@ -225,41 +228,67 @@ void YKTickHandler(){
 /* ----------------- TCB list functions ----------------- */
 //Adds a task to the ready list
 void YKAddToReadyList(TCBp newTask){
-	int priority = newTask->priority;
+	int newPriority = newTask->priority;
 	TCBp taskListPtr = YKReadyTasks;
 	//create the list if it's empty
-	if (YKReadyTasks == NULL)
+	if (YKReadyTasks == NULL){
 		YKReadyTasks = newTask;
-	//append to the list
-	else if (YKReadyTasks->priority > priority){
+	}
+	//prepend to the list
+	else if (YKReadyTasks->priority > newPriority){
 		newTask->next = YKReadyTasks;
 		YKReadyTasks->prev = newTask;
 		YKReadyTasks = newTask;
 	}
 	//stick it somewhere in there
 	else{
-		//TODO: optimize this somehow and make easier to understand
-		while (taskListPtr->next != NULL && taskListPtr->next->priority > priority){
-			taskListPtr = taskListPtr -> next;
+		while (taskListPtr->next != NULL && taskListPtr->priority < newPriority){
+			taskListPtr = taskListPtr->next;
 		}
-		//TODO: use prev as well as next to make double linked list
-		newTask-> next = taskListPtr -> next;
-		taskListPtr->next = newTask;
+		//Add it after taskListPtr
+		if (taskListPtr->priority < newPriority){
+			newTask->next = taskListPtr->next;
+			taskListPtr->next = newTask;
+			newTask->prev = taskListPtr;		
+			if (newTask->next != NULL){
+				newTask->next->prev = newTask;
+			}
+		}
+		//add before taskList
+		else{
+			newTask->prev = taskListPtr->prev;
+			if (taskListPtr->prev != NULL)
+				taskListPtr->prev->next = newTask;
+			taskListPtr->prev = newTask;
+			newTask->next = taskListPtr;
+		}
 	}
 }
 //Adds a task to the suspeneded list
 void YKAddToSuspendedList(TCBp task){
-	task->next = YKSuspendedTasks;
-	YKSuspendedTasks->prev = task;
-	YKSuspendedTasks = task;
+	
+	if (YKSuspendedTasks == NULL){
+		YKSuspendedTasks = task;
+		task->next = NULL;
+		task->next = NULL;
+	}
+	else{
+		task->prev = NULL;
+		task->next = YKSuspendedTasks;
+		YKSuspendedTasks->prev = task;
+		YKSuspendedTasks = task;
+	}
+	
+	
 }
 
 //Removes it from whatever list it's in
 void YKRemoveFromList(TCBp task){
+	
 	if (YKReadyTasks == task){
 		YKReadyTasks = task->next;
 	}
-	else if (YKSuspendedTasks = task){
+	else if (YKSuspendedTasks == task){
 		YKSuspendedTasks = task->next;
 	}
 	
@@ -269,6 +298,10 @@ void YKRemoveFromList(TCBp task){
 	if (task->prev != NULL){
 		task->prev->next = task->next;
 	}
+	
+	task->prev = NULL;
+	task->next = NULL;
+	
 }
 
 /* ----------------- Delaying/semaphore functions ------------------- */
@@ -276,7 +309,11 @@ void YKDelayTask(int ticks){
 	YKEnterMutex();
 	if (ticks > 0){
 		#if DEBUG == 1
-		printString("Delaying\n\n");
+		printString("Delaying Task#");
+		printInt(YKCurrentTask->priority);
+		printString(" ");
+		printInt(ticks);
+		printString(" ticks.\n");
 		#endif
 		YKCurrentTask->delayTicks += ticks;
 	}
@@ -297,6 +334,12 @@ void printCurrentTask(){
 }
 void printTCB(void* ptcb){
 	TCBp tcb = (TCBp) ptcb;
+	
+	if (ptcb == NULL){
+		printString("None\n");
+		return;
+	}
+	
 	
 	printString("TCB(");
 	printInt(tcb->priority);

@@ -25,8 +25,8 @@ ISRHandlers.s:	ISRHandlers.c
 		c86 -g ISRHandlers.i ISRHandlers.s	
 
 #app code
-app.s:	lab4c_app.c
-		$(COMPILER) lab4c_app.c app.i
+app.s:	lab4d_app.c
+		$(COMPILER) lab4d_app.c app.i
 		c86 -g app.i app.s
 
 clean:
