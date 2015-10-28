@@ -296,9 +296,9 @@ void YKAddToReadyList(TCBp newTask){
 
  if (YKReadyTasks == 0){
   YKReadyTasks = newTask;
+  YKReadyTasks-> prev = 0;
 
- }
- else if(YKReadyTasks->priority > priority){
+ } else if(YKReadyTasks->priority > priority){
   newTask->next = YKReadyTasks;
   YKReadyTasks->prev = newTask;
   YKReadyTasks = newTask;
@@ -339,7 +339,7 @@ void YKRemoveFromList(TCBp task){
  if (YKReadyTasks == task){
   YKReadyTasks = task->next;
  }
- else if (YKSuspendedTasks = task){
+ else if (YKSuspendedTasks == task){
   YKSuspendedTasks = task->next;
  }
 

@@ -252,12 +252,11 @@ void YKTickHandler(){
 void YKAddToReadyList(TCBp newTask){
 	int priority = newTask->priority;
 	TCBp taskListPtr = YKReadyTasks;
-	//create the list if it's empty
+	//create the
 	if (YKReadyTasks == NULL){
 		YKReadyTasks = newTask;
 		//append to the list
-	}
-	else if(YKReadyTasks->priority > priority){
+	} else if(YKReadyTasks->priority > priority){
 		newTask->next = YKReadyTasks;
 		YKReadyTasks->prev = newTask;
 		YKReadyTasks = newTask;
@@ -298,7 +297,7 @@ void YKRemoveFromList(TCBp task){
 	if (YKReadyTasks == task){
 		YKReadyTasks = task->next;
 	}
-	else if (YKSuspendedTasks = task){
+	else if (YKSuspendedTasks == task){
 		YKSuspendedTasks = task->next;
 	}
 	
@@ -308,6 +307,8 @@ void YKRemoveFromList(TCBp task){
 	if (task->prev != NULL){
 		task->prev->next = task->next;
 	}
+	task->prev = NULL; 
+	task->next = NULL;
 }
 
 /* ----------------- Delaying/semaphore functions ------------------- */
