@@ -117,7 +117,16 @@ SwitchTaskISR:
 	
 	;Call the scheduler
 	call YKScheduler
-	jmp main			; this should never be called
+	pop ds
+	pop es
+	pop bp
+	pop di
+	pop si
+	pop dx
+	pop bx
+	pop ax
+	sti
+	iret;
 	
 	
 SaveSPtoTCB:	

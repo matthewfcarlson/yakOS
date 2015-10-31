@@ -1,6 +1,7 @@
 #include "YAKkernel.h"
 #include "clib.h"
 #define DEBUG 0
+
 /* ----------------- TCB stuff ----------------- */
 typedef struct taskblock *TCBp;
 /* the TCB struct definition */
@@ -22,6 +23,10 @@ TCBp YKSuspendedTasks;	/* tasks delayed or suspended */
 TCB  YKTCBs[MAX_TASKS+1];/* array to allocate all needed TCBs*/
 int  YKTCBMallocIndex;	/* the index of the current empty TCB in the array */
 
+/* ----------------- Semaphore Array ----------------- */
+YKSEM YKSemaphores[MAX_SEMAPHORES];
+int YKSemaphoreIndex = 0;
+
 //IDLE TASK stuff
 int IdleStack[DEFAULTSTACKSIZE];
 
@@ -38,6 +43,7 @@ void YKRemoveFromList(TCBp task);
 void printCurrentTask();
 void printTCB(void* ptcb);
 void SwitchContext();
+void printTaskLists();
 
 /* ----------------- Public kernel functions -----------------  */
 // - Initializes all required kernel data structures 
@@ -108,25 +114,33 @@ void YKNewTask(void* taskFunc, void* taskStack, int priority){
 	int* newStackSP = (int*)taskStack;
 	YKEnterMutex(); //modifiying a global variable
 	++YKTCBMallocIndex;
-	YKExitMutex();
+	
 	
 	#if DEBUG == 1
+	printString("Creating task#");
+	printInt(priority);
 	printString("\nBP at 0x");
 	printWord((int)taskStack);
 	#endif
 	
-	//Create the default stack	
+	//Create the default stack
+	--newStackSP;
+	--newStackSP;
 	//flags, CS, IP (the address of the function passed in)
 	*(newStackSP) = DEFAULTFLAGS; //put the default flags into memory address newStackSp
 	--newStackSP; //we minus 1 since C will automatically turn this to 2 because it's a pointer
 	*(newStackSP) = 0; //put the default CS into memory adress newStackSP - 2
 	--newStackSP;
 	*(newStackSP) = (int)taskFunc; //function pointer to put in the IP slot
-	newStackSP = newStackSP - 8;   //There are 8 registers on the stack that are default 0
+	newStackSP = newStackSP - 5;   //There are 8 registers on the stack that are default 0
+	*(newStackSP) = (int)taskStack; //set the BP correctly
+	--newStackSP;
+	newStackSP = newStackSP - 2;
 	
 	#if DEBUG == 1
-	printString("\nSP at 0x");
+	printString("\tSP at 0x");
 	printWord((int)newStackSP);
+	printString("\n");
 	#endif
 	
 	newTask->stackPtr = (int*)newStackSP; //we just add the space for the rest of the functions
@@ -140,8 +154,12 @@ void YKNewTask(void* taskFunc, void* taskStack, int priority){
 	newTask->state = 1;
 	//Add to the ready list
 	YKAddToReadyList(newTask);
-	if (YKIsRunning)
+	if (YKIsRunning && YKCurrentTask == NULL)
 		YKScheduler();
+	else if (YKIsRunning)
+		asm("int 11h"); //this will save context and call the scheduler
+		//
+	YKExitMutex();
 }
 // - Starts actual execution of user code 	
 void YKRun(){
@@ -156,14 +174,12 @@ void YKRun(){
 // - Determines the highest priority ready task 
 void YKScheduler(){
 	YKEnterMutex();
-	#if DEBUG == 1
-	printString("Ready Tasks:  ");
-	printTCB(YKReadyTasks);
-	printString("Suspended Tasks:  ");
-	printTCB(YKSuspendedTasks);
-	#endif
+	if (!YKIsRunning) return;
 	//if the new task to run is different
 	if (YKReadyTasks != YKCurrentTask){
+		#if DEBUG == 1
+		printTaskLists();
+		#endif
 		//Load the new task
 		YKCurrentTask = YKReadyTasks;
 		++YKCtxSwCount;
@@ -172,9 +188,10 @@ void YKScheduler(){
 		printInt(YKCurrentTask->priority);
 		printString("\n");
 		#endif
-		
+		YKDispatcher();
 	}
-	YKDispatcher();
+	
+	
 }
 
 // - Begins or resumes execution of the next task
@@ -185,45 +202,6 @@ void YKDispatcher(){
 	SwitchContext(); //TODO: change name
 }
 
-/* ----------------- ISR handlers ----------------- */
-//Handles the tick ISR
-void YKTickHandler(){
-	static int tickCount = 0;
-	TCBp currTCB = YKSuspendedTasks;
-	TCBp movingTCB = NULL;
-	
-	++tickCount;
-	printString("\nTick ");
-	printInt(tickCount);
-	printString("\n");
-
-	//Decrement the wait list
-	while (currTCB != NULL){
-		currTCB->delayTicks = currTCB->delayTicks -1 ;
-		//check if it needs to go to the readyList
-		if (currTCB->delayTicks <= 0){
-			//remove it from the list
-			#if DEBUG == 1
-			printString("Adding task #");
-			printInt(currTCB->priority);
-			printString(" back to the ready list\n");
-			#endif
-			
-			//Store the TCB before we move on to the next one
-			movingTCB = currTCB;
-			currTCB = currTCB->next;			
-			YKEnterMutex();
-			YKRemoveFromList(movingTCB);
-			YKAddToReadyList(movingTCB);
-			YKExitMutex();
-		}
-		else{
-			currTCB = currTCB->next;
-		}
-		
-	}
-	
-}
 
 /* ----------------- TCB list functions ----------------- */
 //Adds a task to the ready list
@@ -304,6 +282,48 @@ void YKRemoveFromList(TCBp task){
 	
 }
 
+/* ----------------- ISR handlers ----------------- */
+//Handles the tick ISR
+void YKTickHandler(){
+	static int tickCount = 0;
+	TCBp currTCB = YKSuspendedTasks;
+	TCBp movingTCB = NULL;
+	
+	++tickCount;
+	#if DISPLAY_TICKS == 1
+	printString("\nTick ");
+	printInt(tickCount);
+	printString("\n");
+	#endif
+
+	//Decrement the wait list
+	while (currTCB != NULL){
+		currTCB->delayTicks = currTCB->delayTicks -1 ;
+		//check if it needs to go to the readyList
+		if (currTCB->delayTicks <= 0){
+			//remove it from the list
+			#if DEBUG == 1
+			printString("Adding task #");
+			printInt(currTCB->priority);
+			printString(" back to the ready list\n");
+			#endif
+			
+			//Store the TCB before we move on to the next one
+			movingTCB = currTCB;
+			currTCB = currTCB->next;			
+			YKEnterMutex();
+			YKRemoveFromList(movingTCB);
+			YKAddToReadyList(movingTCB);
+			YKExitMutex();
+		}
+		else{
+			currTCB = currTCB->next;
+		}
+		
+	}
+	
+}
+
 /* ----------------- Delaying/semaphore functions ------------------- */
 void YKDelayTask(int ticks){
 	YKEnterMutex();
@@ -326,6 +346,82 @@ void YKDelayTask(int ticks){
 	//we will resume from here when we finished the delay ticks
 	YKExitMutex(); 
 	
+}
+
+YKSEM* YKSemCreate(int initialValue){
+	YKSEM* newSem = &YKSemaphores[YKSemaphoreIndex];
+	YKEnterMutex();
+	newSem->count = initialValue;
+	newSem->tasks = NULL;
+	++YKSemaphoreIndex;
+	
+	#if DEBUG == 1
+	printString("Creating new semaphore: 0x");
+	printWord((int)newSem);
+	printString("\n");
+	#endif
+	
+	YKExitMutex();
+	return newSem;
+}
+void YKSemPend(YKSEM *semaphore){
+	YKEnterMutex();
+	#if DEUBG == 1
+	printString("Waiting on Semaphore 0x");
+	printWord((int) semaphore);
+	#endif
+	
+	
+	if (semaphore->count > 0){
+		--(semaphore->count);
+		return;
+	}
+	#if DEUBG == 1
+	printNewLine();
+	#endif
+	
+	YKRemoveFromList(YKCurrentTask);
+	YKCurrentTask->next = semaphore->tasks;
+	semaphore->tasks = YKCurrentTask;
+	
+	//Call the software interrupt that causes a task switch
+	if (YKISRDepth == 0)
+		asm("int 11h");
+	
+	YKExitMutex();
+	
+}
+void YKSemPost(YKSEM *semaphore){
+	TCBp currTask;
+	TCBp addTask;
+	YKEnterMutex();
+	#if DEUBG == 1
+	printString("Posting on Semaphore 0x");
+	printWord((int) semaphore);
+	printString(" Current Tasks waiting:");	
+	printTCB(semaphore->tasks);
+	#endif
+	
+	++(semaphore->count);
+	
+	currTask = semaphore->tasks;
+	if (currTask != NULL)
+		--(semaphore->count);
+	
+	while (currTask != NULL && currTask != currTask->next){
+		addTask = currTask;
+		currTask = currTask->next;
+		YKAddToReadyList(addTask);
+	}
+	semaphore->tasks = NULL;
+	if (YKISRDepth == 0){
+		asm("int 11h");
+	}
+	YKExitMutex();	
+	#if DEUBG == 1
+	printString(" Current Tasks waiting:");	
+	printTCB(semaphore->tasks);
+	#endif
 }
 
 /* ----------------- Helper functions TCB structure ----------------- */
@@ -354,4 +450,17 @@ void printTCB(void* ptcb){
 	}
 	else
 		printString(" \n");
+}
+void printTaskLists(){
+	int i = 0;
+	printString("Ready Tasks:  ");
+	printTCB(YKReadyTasks);
+	printString("Suspended Tasks:  ");
+	printTCB(YKSuspendedTasks);
+	for (i=0; i< YKSemaphoreIndex;i++){
+		printString("Semaphore #");
+		printInt(i);
+		printString(" tasks:");
+		printTCB(YKSemaphores[i].tasks);
+	}
 }

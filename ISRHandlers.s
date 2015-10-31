@@ -12,73 +12,105 @@ L_ISRHandlers_1:
 	DB	"DELAY KEY PRESSED",0
 	ALIGN	2
 KeyboardHandler:
-	; >>>>> Line:	4
+	; >>>>> Line:	8
 	; >>>>> void KeyboardHandler(void){ 
 	jmp	L_ISRHandlers_5
 L_ISRHandlers_6:
-	; >>>>> Line:	6
+	; >>>>> Line:	10
 	; >>>>> if(((char) KeyBuffer) == 'd'){ 
 	cmp	byte [KeyBuffer], 100
 	jne	L_ISRHandlers_7
-	; >>>>> Line:	7
+	; >>>>> Line:	11
 	; >>>>> printNewLine(); 
 	call	printNewLine
-	; >>>>> Line:	8
+	; >>>>> Line:	12
 	; >>>>> printString("DELAY KEY PRESSED"); 
 	mov	ax, L_ISRHandlers_1
 	push	ax
 	call	printString
 	add	sp, 2
-	; >>>>> Line:	9
+	; >>>>> Line:	13
 	; >>>>> printNewLine(); 
 	call	printNewLine
-	; >>>>> Line:	10
+	; >>>>> Line:	14
 	; >>>>> for(i = 0; i < 5000; i++){} 
 	mov	word [bp-2], 0
 	jmp	L_ISRHandlers_9
 L_ISRHandlers_8:
 L_ISRHandlers_11:
-	; >>>>> Line:	10
+	; >>>>> Line:	14
 	; >>>>> for(i = 0; i < 5000; i++){} 
 	inc	word [bp-2]
 L_ISRHandlers_9:
 	cmp	word [bp-2], 5000
 	jl	L_ISRHandlers_8
 L_ISRHandlers_10:
-	; >>>>> Line:	11
+	; >>>>> Line:	15
 	; >>>>> printString("DELAY COMPLETE"); 
 	mov	ax, L_ISRHandlers_2
 	push	ax
 	call	printString
 	add	sp, 2
-	; >>>>> Line:	12
+	; >>>>> Line:	16
 	; >>>>> printNewLine(); 
 	call	printNewLine
 	jmp	L_ISRHandlers_12
 L_ISRHandlers_7:
-	; >>>>> Line:	14
+	; >>>>> Line:	18
+	; >>>>> else if(((char) KeyBuffer) == 'l'){ 
+	cmp	byte [KeyBuffer], 108
+	jne	L_ISRHandlers_13
+	; >>>>> Line:	19
+	; >>>>> printTaskLists 
+	call	printTaskLists
+	jmp	L_ISRHandlers_14
+L_ISRHandlers_13:
+	; >>>>> Line:	21
+	; >>>>> else if(((char) KeyBuffer) == 'l'){ 
+	cmp	byte [KeyBuffer], 108
+	jne	L_ISRHandlers_15
+	; >>>>> Line:	22
+	; >>>>> YKTickHandler(); 
+	call	YKTickHandler
+	jmp	L_ISRHandlers_16
+L_ISRHandlers_15:
+	; >>>>> Line:	24
+	; >>>>> else if(((char) KeyBuffer) == 'p'){ 
+	cmp	byte [KeyBuffer], 112
+	jne	L_ISRHandlers_17
+	; >>>>> Line:	25
+	; >>>>> YKSemPost(NSemPtr); 
+	push	word [NSemPtr]
+	call	YKSemPost
+	add	sp, 2
+	jmp	L_ISRHandlers_18
+L_ISRHandlers_17:
+	; >>>>> Line:	28
 	; >>>>> printNewLine(); 
 	call	printNewLine
-	; >>>>> Line:	15
+	; >>>>> Line:	29
 	; >>>>> printString("KEYPRESS ("); 
 	mov	ax, L_ISRHandlers_3
 	push	ax
 	call	printString
 	add	sp, 2
-	; >>>>> Line:	16
+	; >>>>> Line:	30
 	; >>>>> printChar((char) KeyBuffer); 
 	push	word [KeyBuffer]
 	call	printChar
 	add	sp, 2
-	; >>>>> Line:	17
+	; >>>>> Line:	31
 	; >>>>> printString(") IGNORED"); 
 	mov	ax, L_ISRHandlers_4
 	push	ax
 	call	printString
 	add	sp, 2
-	; >>>>> Line:	18
+	; >>>>> Line:	32
 	; >>>>> printNewLine(); 
 	call	printNewLine
+L_ISRHandlers_18:
+L_ISRHandlers_16:
+L_ISRHandlers_14:
 L_ISRHandlers_12:
 	mov	sp, bp
 	pop	bp

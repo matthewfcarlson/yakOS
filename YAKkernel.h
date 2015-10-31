@@ -8,6 +8,16 @@ The YAK kernel functions
 #define STATE_RUNNING   1
 #define STATE_DELAYED   2
 #define STATE_SUSPENDED 3
+#define MAX_SEMAPHORES  5
+#define DISPLAY_TICKS 	0 	//if you want TICK n to show
+
+typedef struct semaphore
+{
+    int count;			/* the current current state */
+    void* tasks;		/* current delayed tasks */
+    
+}  YKSEM;
+
 
 void YKInitialize(); // - Initializes all required kernel data structures 
 void YKEnterMutex(); // - Disables interrupts 
@@ -21,6 +31,10 @@ void YKEnterISR();
 void YKExitISR(); 
 void YKTickHandler();
 void YKDelayTask(int ticks);
+
+YKSEM* YKSemCreate(int initialValue);
+void YKSemPend(YKSEM *semaphore);
+void YKSemPost(YKSEM *semaphore);
 
 
 

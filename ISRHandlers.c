@@ -1,5 +1,9 @@
 #include "clib.h"
+#include "YAKkernel.h"
 extern int KeyBuffer; 
+extern void* NSemPtr;
+extern void printTaskLists();
+
 
 void KeyboardHandler(void){
 	int i;
@@ -10,7 +14,17 @@ void KeyboardHandler(void){
 		for(i = 0; i < 5000; i++){}
 		printString("DELAY COMPLETE");
 		printNewLine();
-	} else{
+	}
+	else if(((char) KeyBuffer) == 'l'){
+		printTaskLists();
+	}
+	else if(((char) KeyBuffer) == 'l'){
+		YKTickHandler();
+	}
+	else if(((char) KeyBuffer) == 'p'){
+		YKSemPost(NSemPtr);
+	}
+	else{
 		printNewLine();  
 		printString("KEYPRESS (");
 		printChar((char) KeyBuffer); 
@@ -18,3 +32,4 @@ void KeyboardHandler(void){
 		printNewLine();
 	}
 }
+

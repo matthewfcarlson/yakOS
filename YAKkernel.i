@@ -1,6 +1,14 @@
 #line 1 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
 #line 1 "YAKkernel.h"
-#line 12 "YAKkernel.h"
+#line 14 "YAKkernel.h"
+typedef struct semaphore
+{
+    int count;
+    void* tasks;
+
+} YKSEM;
+
+
 void YKInitialize();
 void YKEnterMutex();
 void YKExitMutex();
@@ -13,6 +21,10 @@ void YKEnterISR();
 void YKExitISR();
 void YKTickHandler();
 void YKDelayTask(int ticks);
+
+YKSEM* YKSemCreate(int initialValue);
+void YKSemPend(YKSEM *semaphore);
+void YKSemPost(YKSEM *semaphore);
 
 
 
@@ -48,6 +60,7 @@ void signalEOI(void);
 #line 3 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
 
 
+
 typedef struct taskblock *TCBp;
 
 typedef struct taskblock
@@ -69,6 +82,10 @@ TCB YKTCBs[ 5 +1];
 int YKTCBMallocIndex;
 
 
+YKSEM YKSemaphores[ 5 ];
+int YKSemaphoreIndex = 0;
+
+
 int IdleStack[ 100 ];
 
 
@@ -84,6 +101,7 @@ void YKRemoveFromList(TCBp task);
 void printCurrentTask();
 void printTCB(void* ptcb);
 void SwitchContext();
+void printTaskLists();
 
 
 
@@ -142,7 +160,7 @@ void YKIdleTask(){
 	while(1){
 
 			++YKIdleCount;
-#line 102 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+#line 108 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
 	}
 
 }
@@ -152,15 +170,20 @@ void YKNewTask(void* taskFunc, void* taskStack, int priority){
 	int* newStackSP = (int*)taskStack;
 	YKEnterMutex();
 	++YKTCBMallocIndex;
-	YKExitMutex();
-#line 120 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+#line 127 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+	--newStackSP;
+	--newStackSP;
+
 	*(newStackSP) =  64 ;
 	--newStackSP;
 	*(newStackSP) = 0;
 	--newStackSP;
 	*(newStackSP) = (int)taskFunc;
-	newStackSP = newStackSP - 8;
-#line 132 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+	newStackSP = newStackSP - 5;
+	*(newStackSP) = (int)taskStack;
+	--newStackSP;
+	newStackSP = newStackSP - 2;
+#line 146 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
 	newTask->stackPtr = (int*)newStackSP;
 
 
@@ -172,12 +195,16 @@ void YKNewTask(void* taskFunc, void* taskStack, int priority){
 	newTask->state = 1;
 
 	YKAddToReadyList(newTask);
-	if (YKIsRunning)
+	if (YKIsRunning && YKCurrentTask ==  0 )
 		YKScheduler();
+	else if (YKIsRunning)
+		asm("int 11h");
+
+	YKExitMutex();
 }
 
 void YKRun(){
-#line 151 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+#line 169 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
 	YKIsRunning = 1;
 	YKScheduler();
 
@@ -186,14 +213,17 @@ void YKRun(){
 
 void YKScheduler(){
 	YKEnterMutex();
-#line 166 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
-	if (YKReadyTasks != YKCurrentTask){
+	if (!YKIsRunning) return;
 
+	if (YKReadyTasks != YKCurrentTask){
+#line 184 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
 		YKCurrentTask = YKReadyTasks;
 		++YKCtxSwCount;
-#line 176 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+#line 191 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+		YKDispatcher();
 	}
-	YKDispatcher();
+
+
 }
 
 
@@ -204,38 +234,6 @@ void YKDispatcher(){
 	SwitchContext();
 }
 
-
-
-void YKTickHandler(){
-	static int tickCount = 0;
-	TCBp currTCB = YKSuspendedTasks;
-	TCBp movingTCB =  0 ;
-
-	++tickCount;
-	printString("\nTick ");
-	printInt(tickCount);
-	printString("\n");
-
-
-	while (currTCB !=  0 ){
-		currTCB->delayTicks = currTCB->delayTicks -1 ;
-
-		if (currTCB->delayTicks <= 0){
-#line 213 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
-			movingTCB = currTCB;
-			currTCB = currTCB->next;
-			YKEnterMutex();
-			YKRemoveFromList(movingTCB);
-			YKAddToReadyList(movingTCB);
-			YKExitMutex();
-		}
-		else{
-			currTCB = currTCB->next;
-		}
-
-	}
-
-}
 
 
 
@@ -317,10 +315,39 @@ void YKRemoveFromList(TCBp task){
 }
 
 
+
+void YKTickHandler(){
+	static int tickCount = 0;
+	TCBp currTCB = YKSuspendedTasks;
+	TCBp movingTCB =  0 ;
+
+	++tickCount;
+#line 300 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+	while (currTCB !=  0 ){
+		currTCB->delayTicks = currTCB->delayTicks -1 ;
+
+		if (currTCB->delayTicks <= 0){
+#line 312 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+			movingTCB = currTCB;
+			currTCB = currTCB->next;
+			YKEnterMutex();
+			YKRemoveFromList(movingTCB);
+			YKAddToReadyList(movingTCB);
+			YKExitMutex();
+		}
+		else{
+			currTCB = currTCB->next;
+		}
+
+	}
+
+}
+
+
 void YKDelayTask(int ticks){
 	YKEnterMutex();
 	if (ticks > 0){
-#line 318 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+#line 338 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
 		YKCurrentTask->delayTicks += ticks;
 	}
 
@@ -332,6 +359,61 @@ void YKDelayTask(int ticks){
 
 	YKExitMutex();
 
+}
+
+YKSEM* YKSemCreate(int initialValue){
+	YKSEM* newSem = &YKSemaphores[YKSemaphoreIndex];
+	YKEnterMutex();
+	newSem->count = initialValue;
+	newSem->tasks =  0 ;
+	++YKSemaphoreIndex;
+	printString("Creating new semaphore: 0x");
+	printWord((int)newSem);
+	printString("\n");
+	YKExitMutex();
+	return newSem;
+}
+void YKSemPend(YKSEM *semaphore){
+	YKEnterMutex();
+#line 371 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+	if (semaphore->count > 0){
+		--(semaphore->count);
+		return;
+	}
+#line 379 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+	YKRemoveFromList(YKCurrentTask);
+	YKCurrentTask->next = semaphore->tasks;
+	semaphore->tasks = YKCurrentTask;
+
+
+	if (YKISRDepth == 0)
+		asm("int 11h");
+
+	YKExitMutex();
+
+}
+void YKSemPost(YKSEM *semaphore){
+	TCBp currTask;
+	TCBp addTask;
+	YKEnterMutex();
+#line 401 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+	++(semaphore->count);
+
+	currTask = semaphore->tasks;
+	if (currTask !=  0 )
+		--(semaphore->count);
+
+	while (currTask !=  0  && currTask != currTask->next){
+		addTask = currTask;
+		currTask = currTask->next;
+		YKAddToReadyList(addTask);
+	}
+	semaphore->tasks =  0 ;
+	if (YKISRDepth == 0){
+		asm("int 11h");
+	}
+	YKExitMutex();
+#line 421 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
 }
 
 
@@ -360,4 +442,17 @@ void printTCB(void* ptcb){
 	}
 	else
 		printString(" \n");
+}
+void printTaskLists(){
+	int i = 0;
+	printString("Ready Tasks:  ");
+	printTCB(YKReadyTasks);
+	printString("Suspended Tasks:  ");
+	printTCB(YKSuspendedTasks);
+	for (i=0; i< YKSemaphoreIndex;i++){
+		printString("Semaphore #");
+		printInt(i);
+		printString(" tasks:");
+		printTCB(YKSemaphores[i].tasks);
+	}
 }
