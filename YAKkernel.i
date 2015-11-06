@@ -1,12 +1,23 @@
 #line 1 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
 #line 1 "YAKkernel.h"
-#line 14 "YAKkernel.h"
+#line 16 "YAKkernel.h"
 typedef struct semaphore
 {
     int count;
     void* tasks;
 
 } YKSEM;
+
+
+
+struct msg
+{
+    int tick;
+    int data;
+};
+
+typedef void* YKQ;
+
 
 
 void YKInitialize();
@@ -25,6 +36,10 @@ void YKDelayTask(int ticks);
 YKSEM* YKSemCreate(int initialValue);
 void YKSemPend(YKSEM *semaphore);
 void YKSemPost(YKSEM *semaphore);
+
+YKQ* YKQCreate(void **start, unsigned size);
+void* YKQPend(YKQ *queue);
+int YKQPost(YKQ *queue, void *msg);
 
 
 
@@ -61,6 +76,7 @@ void signalEOI(void);
 
 
 
+
 typedef struct taskblock *TCBp;
 
 typedef struct taskblock
@@ -89,6 +105,18 @@ int YKSemaphoreIndex = 0;
 int IdleStack[ 100 ];
 
 
+typedef struct YKMessQueue{
+	unsigned head;
+	unsigned tail;
+	unsigned size;
+	unsigned length;
+	void** queue;
+	void* tasks;
+} YKMQ;
+YKMQ YKQueues[ 5 ];
+int YKQueueIndex = 0;
+
+
 unsigned YKCtxSwCount;
 unsigned YKIdleCount;
 unsigned YKISRDepth;
@@ -102,6 +130,9 @@ void printCurrentTask();
 void printTCB(void* ptcb);
 void SwitchContext();
 void printTaskLists();
+void YKUpdateSuspendedTasks();
+void printQueue(YKMQ* queue);
+
 
 
 
@@ -154,13 +185,12 @@ void YKExitISR(){
 }
 
 void YKIdleTask(){
-	int i = 0;
 
-	YKExitMutex();
 	while(1){
+		YKEnterMutex();
 
-			++YKIdleCount;
-#line 108 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+		++YKIdleCount;
+		YKExitMutex();
 	}
 
 }
@@ -170,7 +200,7 @@ void YKNewTask(void* taskFunc, void* taskStack, int priority){
 	int* newStackSP = (int*)taskStack;
 	YKEnterMutex();
 	++YKTCBMallocIndex;
-#line 127 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+#line 140 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
 	--newStackSP;
 	--newStackSP;
 
@@ -183,7 +213,7 @@ void YKNewTask(void* taskFunc, void* taskStack, int priority){
 	*(newStackSP) = (int)taskStack;
 	--newStackSP;
 	newStackSP = newStackSP - 2;
-#line 146 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+#line 159 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
 	newTask->stackPtr = (int*)newStackSP;
 
 
@@ -204,7 +234,7 @@ void YKNewTask(void* taskFunc, void* taskStack, int priority){
 }
 
 void YKRun(){
-#line 169 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+#line 182 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
 	YKIsRunning = 1;
 	YKScheduler();
 
@@ -216,10 +246,10 @@ void YKScheduler(){
 	if (!YKIsRunning) return;
 
 	if (YKReadyTasks != YKCurrentTask){
-#line 184 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+#line 197 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
 		YKCurrentTask = YKReadyTasks;
 		++YKCtxSwCount;
-#line 191 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+#line 204 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
 		YKDispatcher();
 	}
 
@@ -315,19 +345,16 @@ void YKRemoveFromList(TCBp task){
 }
 
 
-
-void YKTickHandler(){
-	static int tickCount = 0;
+void YKUpdateSuspendedTasks(){
 	TCBp currTCB = YKSuspendedTasks;
 	TCBp movingTCB =  0 ;
 
-	++tickCount;
-#line 300 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+
 	while (currTCB !=  0 ){
 		currTCB->delayTicks = currTCB->delayTicks -1 ;
 
 		if (currTCB->delayTicks <= 0){
-#line 312 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+#line 316 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
 			movingTCB = currTCB;
 			currTCB = currTCB->next;
 			YKEnterMutex();
@@ -347,7 +374,7 @@ void YKTickHandler(){
 void YKDelayTask(int ticks){
 	YKEnterMutex();
 	if (ticks > 0){
-#line 338 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+#line 342 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
 		YKCurrentTask->delayTicks += ticks;
 	}
 
@@ -367,20 +394,18 @@ YKSEM* YKSemCreate(int initialValue){
 	newSem->count = initialValue;
 	newSem->tasks =  0 ;
 	++YKSemaphoreIndex;
-	printString("Creating new semaphore: 0x");
-	printWord((int)newSem);
-	printString("\n");
+#line 368 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
 	YKExitMutex();
 	return newSem;
 }
 void YKSemPend(YKSEM *semaphore){
 	YKEnterMutex();
-#line 371 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+#line 379 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
 	if (semaphore->count > 0){
 		--(semaphore->count);
 		return;
 	}
-#line 379 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+#line 387 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
 	YKRemoveFromList(YKCurrentTask);
 	YKCurrentTask->next = semaphore->tasks;
 	semaphore->tasks = YKCurrentTask;
@@ -396,7 +421,7 @@ void YKSemPost(YKSEM *semaphore){
 	TCBp currTask;
 	TCBp addTask;
 	YKEnterMutex();
-#line 401 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+#line 409 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
 	++(semaphore->count);
 
 	currTask = semaphore->tasks;
@@ -413,13 +438,110 @@ void YKSemPost(YKSEM *semaphore){
 		asm("int 11h");
 	}
 	YKExitMutex();
-#line 421 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+#line 429 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+}
+
+
+YKQ* YKQCreate(void **start, unsigned size){
+	YKMQ* queue = &YKQueues[YKQueueIndex];
+	YKEnterMutex();
+	queue->head = 0;
+	queue->tail = 0;
+	queue->size = size;
+	queue->length = 0;
+	queue->queue = start;
+	++YKQueueIndex;
+	YKExitMutex();
+	return (void*)queue;
+}
+void* YKQPend(YKQ *queue){
+	void* message;
+	YKMQ* messQ = (YKMQ*)queue;
+#line 453 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+	YKEnterMutex();
+	if (messQ->length == 0){
+#line 458 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+		YKRemoveFromList(YKCurrentTask);
+		YKCurrentTask->next = messQ->tasks;
+		messQ->tasks = YKCurrentTask;
+		if (YKISRDepth == 0){
+			asm("int 11h");
+		}
+		else{
+			printString("\n\nERROR: CANNOT SWITCH TASK SINCE IN ISR------------------------\n\n");
+		}
+	}
+	YKExitMutex();
+
+	YKEnterMutex();
+
+
+	messQ->length = messQ->length - 1;
+
+	message = messQ->queue[messQ->head];
+	++(messQ->head);
+	if (messQ->head == messQ->size )
+		messQ->head = 0;
+#line 487 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+	return message;
+
+}
+int YKQPost(YKQ *queue, void *msg){
+	YKMQ* messQ = (YKMQ*)queue;
+	TCBp currTask;
+	TCBp addTask;
+	YKEnterMutex();
+#line 502 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+	if (messQ->length >= messQ->size){
+#line 506 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+		return 0;
+	}
+	++(messQ->length);
+	messQ->queue[messQ->tail] = msg;
+
+	++(messQ->tail);
+	if (messQ->tail == messQ->size )
+		messQ->tail = 0;
+
+
+	currTask = messQ->tasks;
+	while (currTask !=  0  && currTask != currTask->next){
+		addTask = currTask;
+		currTask = currTask->next;
+		YKAddToReadyList(addTask);
+	}
+
+	messQ->tasks =  0 ;
+
+	YKExitMutex();
+	return 5;
 }
 
 
 void printCurrentTask(){
 	printTCB(YKCurrentTask);
 }
+
+void printQueue(YKMQ* queue){
+	int i =0;
+	printString("Queue size:");
+	printInt(queue->size);
+	printString(" count:");
+	printInt(queue->length);
+	printString(" h:");
+	printInt(queue->head);
+	printString(" t:");
+	printInt(queue->tail);
+	printString(" tasks:");
+	printTCB(queue->tasks);
+	printString("Contents: [");
+	for (i=0;i<queue->size;i++){
+		printWord((int)queue->queue[i]);
+		printString(", ");
+	}
+	printString("]\n");
+}
+
 void printTCB(void* ptcb){
 	TCBp tcb = (TCBp) ptcb;
 

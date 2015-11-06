@@ -3,6 +3,7 @@ The YAK kernel functions
 */
 #define NULL 0
 #define MAX_TASKS 5
+#define MAX_QUEUES 5
 #define DEFAULTSTACKSIZE 100
 #define DEFAULTFLAGS 64
 #define STATE_RUNNING   1
@@ -10,6 +11,7 @@ The YAK kernel functions
 #define STATE_SUSPENDED 3
 #define MAX_SEMAPHORES  5
 #define DISPLAY_TICKS 	0 	//if you want TICK n to show
+#define MSGARRAYSIZE      20
 
 typedef struct semaphore
 {
@@ -17,6 +19,17 @@ typedef struct semaphore
     void* tasks;		/* current delayed tasks */
     
 }  YKSEM;
+
+
+
+struct msg 
+{
+    int tick;
+    int data;
+};
+
+typedef void* YKQ;
+
 
 
 void YKInitialize(); // - Initializes all required kernel data structures 
@@ -36,8 +49,13 @@ YKSEM* YKSemCreate(int initialValue);
 void YKSemPend(YKSEM *semaphore);
 void YKSemPost(YKSEM *semaphore);
 
+YKQ* YKQCreate(void **start, unsigned size);
+void* YKQPend(YKQ *queue);
+int YKQPost(YKQ *queue, void *msg);
+
 
 
 //Global Variables extern since they are defined in the c code
 extern unsigned YKCtxSwCount; // - Global variable that tracks context switches 
-extern unsigned YKIdleCount;  // - Global variable incremented by idle task 
+extern unsigned YKIdleCount;  // - Global variable incremented by idle task
+

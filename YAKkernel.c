@@ -1,6 +1,7 @@
 #include "YAKkernel.h"
 #include "clib.h"
 #define DEBUG 0
+#define DEBUG_QUEUE 0
 
 /* ----------------- TCB stuff ----------------- */
 typedef struct taskblock *TCBp;
@@ -14,7 +15,7 @@ typedef struct taskblock
     TCBp next;			/* forward ptr for dbl linked list */
     TCBp prev;			/* backward ptr for dbl linked list */
 }  TCB;
-
+ 
 /* ----------------- TCB lisks ----------------- */
 TCBp YKCurrentTask;		/* the currently running task */
 TCBp YKReadyTasks;		/* a list of TCBs of all ready tasks in order of decreasing priority */ 
@@ -30,11 +31,23 @@ int YKSemaphoreIndex = 0;
 //IDLE TASK stuff
 int IdleStack[DEFAULTSTACKSIZE];
 
+/* ----------------- Message Queue Array ----------------- */
+typedef struct YKMessQueue{
+	unsigned head;
+	unsigned tail;
+	unsigned size;
+	unsigned length;
+	void**	 queue;
+	void* 	 tasks;
+} YKMQ;
+YKMQ YKQueues[MAX_QUEUES];
+int YKQueueIndex = 0;
+
 /* ----------------- Global Variables ----------------- */
 unsigned YKCtxSwCount; // - Global variable that tracks context switches 
 unsigned YKIdleCount;  // - Global variable incremented by idle task 
 unsigned YKISRDepth;
-int YKIsRunning;
+int YKIsRunning; 
 
 /* ----------------- Private Kernel function declerations -----------------  */
 void YKAddToSuspendedList(TCBp task);
@@ -44,6 +57,9 @@ void printCurrentTask();
 void printTCB(void* ptcb);
 void SwitchContext();
 void printTaskLists();
+void YKUpdateSuspendedTasks();
+void printQueue(YKMQ* queue);
+
 
 /* ----------------- Public kernel functions -----------------  */
 // - Initializes all required kernel data structures 
@@ -96,15 +112,12 @@ void YKExitISR(){
 }
 // - Kernel's idle task 
 void YKIdleTask(){
-	int i = 0;
 	//make sure we have interrupts on
-	YKExitMutex();
 	while(1){ //Just spin in idle and count to 1000
-		//for (i = 0; i< 2; i++);
-			++YKIdleCount;
-		#if DEBUG == 1
-		//printString("Idling...\n");
-		#endif
+		YKEnterMutex(); 
+		//We enter mutex here not for atomic reasons but so that the idle takes 4 instructions as per spec 
+		++YKIdleCount;
+		YKExitMutex();
 	}
 	
 }   
@@ -282,20 +295,11 @@ void YKRemoveFromList(TCBp task){
 	
 }
 
-/* ----------------- ISR handlers ----------------- */
-//Handles the tick ISR
-void YKTickHandler(){
-	static int tickCount = 0;
+//Decrements the delays in the suspended list typically run from TickHandler
+void YKUpdateSuspendedTasks(){
 	TCBp currTCB = YKSuspendedTasks;
 	TCBp movingTCB = NULL;
 	
-	++tickCount;
-	#if DISPLAY_TICKS == 1
-	printString("\nTick ");
-	printInt(tickCount);
-	printString("\n");
-	#endif
-
 	//Decrement the wait list
 	while (currTCB != NULL){
 		currTCB->delayTicks = currTCB->delayTicks -1 ;
@@ -424,10 +428,129 @@ void YKSemPost(YKSEM *semaphore){
 	#endif
 }
 
+// Message queue functions
+YKQ* YKQCreate(void **start, unsigned size){
+	YKMQ* queue = &YKQueues[YKQueueIndex];
+	YKEnterMutex();
+	queue->head = 0;
+	queue->tail = 0;
+	queue->size = size;
+	queue->length = 0;
+	queue->queue = start;
+	++YKQueueIndex;
+	YKExitMutex();
+	return (void*)queue;
+}
+void* YKQPend(YKQ *queue){
+	void* message;
+	YKMQ* messQ = (YKMQ*)queue;
+	
+	#if DEBUG==1 || DEBUG_QUEUE == 1
+	printString("Pending on Queue\n");
+	printQueue(messQ);
+	#endif
+	
+	YKEnterMutex();
+	if (messQ->length == 0){
+		#if DEBUG==1 || DEBUG_QUEUE == 1
+		printString("Delaying current Task for Queue\n");
+		#endif
+		YKRemoveFromList(YKCurrentTask);
+		YKCurrentTask->next = messQ->tasks;
+		messQ->tasks = YKCurrentTask;
+		if (YKISRDepth == 0){
+			asm("int 11h");
+		}
+		else{
+			printString("\n\nERROR: CANNOT SWITCH TASK SINCE IN ISR------------------------\n\n");
+		}
+	}	
+	YKExitMutex();
+	//We will be delayed here
+	YKEnterMutex();
+	
+	//If we return to this point then there is something in the queue
+	messQ->length = messQ->length - 1;
+	
+	message = messQ->queue[messQ->head];
+	++(messQ->head);
+	if (messQ->head == messQ->size )
+		messQ->head = 0;
+	
+	#if DEBUG==1 || DEBUG_QUEUE == 1
+	printString("Returning Message: 0x");
+	printWord((int)message);
+	printString("\n");
+	YKExitMutex();
+	#endif
+	
+	return message;
+	
+}
+int YKQPost(YKQ *queue, void *msg){
+	YKMQ* messQ = (YKMQ*)queue;
+	TCBp currTask;
+	TCBp addTask;
+	YKEnterMutex();
+	#if DEBUG==1 || DEBUG_QUEUE == 1
+	printQueue(messQ);
+	printString("Adding to queue with ");
+	printInt(messQ->length);
+	printString(" messages.\n");
+	#endif
+	
+	if (messQ->length >= messQ->size){
+		#if DEBUG==1 || DEBUG_QUEUE == 1
+		printString("Overflow of Queue\n");
+		#endif
+		return 0;
+	}
+	++(messQ->length);
+	messQ->queue[messQ->tail] = msg;
+	
+	++(messQ->tail);
+	if (messQ->tail == messQ->size )
+		messQ->tail = 0;
+	
+	
+	currTask = messQ->tasks;
+	while (currTask != NULL && currTask != currTask->next){
+		addTask = currTask;
+		currTask = currTask->next;
+		YKAddToReadyList(addTask);
+	}
+
+	messQ->tasks = NULL;	
+	
+	YKExitMutex();
+	return 5;
+}
+
 /* ----------------- Helper functions TCB structure ----------------- */
 void printCurrentTask(){
 	printTCB(YKCurrentTask);
 }
+
+void printQueue(YKMQ* queue){
+	int i =0;
+	printString("Queue size:");
+	printInt(queue->size);
+	printString(" count:");
+	printInt(queue->length);
+	printString(" h:");
+	printInt(queue->head);
+	printString(" t:");
+	printInt(queue->tail);
+	printString(" tasks:");
+	printTCB(queue->tasks);
+	printString("Contents: [");
+	for (i=0;i<queue->size;i++){
+		printWord((int)queue->queue[i]);
+		printString(", ");
+	}
+	printString("]\n");
+}
+
 void printTCB(void* ptcb){
 	TCBp tcb = (TCBp) ptcb;
 	
