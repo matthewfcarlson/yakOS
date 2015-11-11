@@ -15,63 +15,63 @@ KeyboardHandler:
 	; >>>>> void KeyboardHandler(void){ 
 	jmp	L_ISRHandlers_3
 L_ISRHandlers_4:
-	; >>>>> Line:	18
+	; >>>>> Line:	19
 	; >>>>> GlobalFlag = 1; 
 	mov	word [GlobalFlag], 1
-	; >>>>> Line:	19
+	; >>>>> Line:	21
 	; >>>>> if(((char) KeyBuffer) == 'd'){ 
 	cmp	byte [KeyBuffer], 100
 	jne	L_ISRHandlers_5
-	; >>>>> Line:	20
+	; >>>>> Line:	22
 	; >>>>> printNewLine(); 
 	call	printNewLine
-	; >>>>> Line:	21
+	; >>>>> Line:	23
 	; >>>>> printString("DELAY KEY PRESSED"); 
 	mov	ax, L_ISRHandlers_1
 	push	ax
 	call	printString
 	add	sp, 2
-	; >>>>> Line:	22
+	; >>>>> Line:	24
 	; >>>>> printNewLine(); 
 	call	printNewLine
-	; >>>>> Line:	23
+	; >>>>> Line:	25
 	; >>>>> for(i = 0; i < 5000; i++){} 
 	mov	word [bp-2], 0
 	jmp	L_ISRHandlers_7
 L_ISRHandlers_6:
 L_ISRHandlers_9:
-	; >>>>> Line:	23
+	; >>>>> Line:	25
 	; >>>>> for(i = 0; i < 5000; i++){} 
 	inc	word [bp-2]
 L_ISRHandlers_7:
 	cmp	word [bp-2], 5000
 	jl	L_ISRHandlers_6
 L_ISRHandlers_8:
-	; >>>>> Line:	24
+	; >>>>> Line:	26
 	; >>>>> printString("DELAY COMPLETE"); 
 	mov	ax, L_ISRHandlers_2
 	push	ax
 	call	printString
 	add	sp, 2
-	; >>>>> Line:	25
+	; >>>>> Line:	27
 	; >>>>> printNewLine(); 
 	call	printNewLine
 	jmp	L_ISRHandlers_10
 L_ISRHandlers_5:
-	; >>>>> Line:	27
+	; >>>>> Line:	29
 	; >>>>> else if(((char) KeyBuffer) == 'l'){ 
 	cmp	byte [KeyBuffer], 108
 	jne	L_ISRHandlers_11
-	; >>>>> Line:	28
+	; >>>>> Line:	30
 	; >>>>> printTaskLists(); 
 	call	printTaskLists
 	jmp	L_ISRHandlers_12
 L_ISRHandlers_11:
-	; >>>>> Line:	30
+	; >>>>> Line:	32
 	; >>>>> else if(((char) KeyBuffer) == 't'){ 
 	cmp	byte [KeyBuffer], 116
 	jne	L_ISRHandlers_13
-	; >>>>> Line:	31
+	; >>>>> Line:	33
 	; >>>>> YKTickHandler(); 
 	call	YKTickHandler
 L_ISRHandlers_13:
@@ -94,17 +94,17 @@ L_ISRHandlers_17:
 	DB	"  TickISR: queue overflow! ",0xA,0
 	ALIGN	2
 YKTickHandler:
-	; >>>>> Line:	45
+	; >>>>> Line:	48
 	; >>>>> void YKTickHandler(){ 
 	jmp	L_ISRHandlers_18
 L_ISRHandlers_19:
-	; >>>>> Line:	50
+	; >>>>> Line:	53
 	; >>>>> ++YKTickNum; 
 	inc	word [YKTickNum]
-	; >>>>> Line:	57
+	; >>>>> Line:	62
 	; >>>>> YKUpdateSuspendedTasks(); 
 	call	YKUpdateSuspendedTasks
-	; >>>>> Line:	60
+	; >>>>> Line:	65
 	; >>>>> MsgArray[next].tick = YKTickNum; 
 	mov	ax, word [L_ISRHandlers_15]
 	shl	ax, 1
@@ -113,7 +113,7 @@ L_ISRHandlers_19:
 	add	si, MsgArray
 	mov	ax, word [YKTickNum]
 	mov	word [si], ax
-	; >>>>> Line:	61
+	; >>>>> Line:	66
 	; >>>>> data = (data + 89) % 100; 
 	mov	ax, word [L_ISRHandlers_16]
 	add	ax, 89
@@ -122,7 +122,7 @@ L_ISRHandlers_19:
 	idiv	cx
 	mov	ax, dx
 	mov	word [L_ISRHandlers_16], ax
-	; >>>>> Line:	62
+	; >>>>> Line:	67
 	; >>>>> MsgArray[next].data = data; 
 	mov	ax, word [L_ISRHandlers_15]
 	shl	ax, 1
@@ -132,7 +132,7 @@ L_ISRHandlers_19:
 	add	si, 2
 	mov	ax, word [L_ISRHandlers_16]
 	mov	word [si], ax
-	; >>>>> Line:	63
+	; >>>>> Line:	68
 	; >>>>> if (YKQPost(MsgQPtr, (void *) &(MsgArray[next])) == 0) 
 	mov	ax, word [L_ISRHandlers_15]
 	shl	ax, 1
@@ -144,7 +144,7 @@ L_ISRHandlers_19:
 	add	sp, 4
 	test	ax, ax
 	jne	L_ISRHandlers_20
-	; >>>>> Line:	64
+	; >>>>> Line:	69
 	; >>>>> printString("  TickISR: queue overflow! \n"); 
 	mov	ax, L_ISRHandlers_17
 	push	ax
@@ -152,14 +152,14 @@ L_ISRHandlers_19:
 	add	sp, 2
 	jmp	L_ISRHandlers_21
 L_ISRHandlers_20:
-	; >>>>> Line:	65
+	; >>>>> Line:	70
 	; >>>>> else if (++next >=  20 ) 
 	mov	ax, word [L_ISRHandlers_15]
 	inc	ax
 	mov	word [L_ISRHandlers_15], ax
 	cmp	ax, 20
 	jl	L_ISRHandlers_22
-	; >>>>> Line:	66
+	; >>>>> Line:	71
 	; >>>>> next = 0; 
 	mov	word [L_ISRHandlers_15], 0
 L_ISRHandlers_22:

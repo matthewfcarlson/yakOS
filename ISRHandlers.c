@@ -15,7 +15,9 @@ unsigned YKTickNum = 0;
 /* ----------------- ISR handlers ----------------- */
 void KeyboardHandler(void){
 	int i;
+	//if any key is pressed set the global flag
 	GlobalFlag = 1;
+	
 	if(((char) KeyBuffer) == 'd'){
 		printNewLine();  
 		printString("DELAY KEY PRESSED");
@@ -31,6 +33,7 @@ void KeyboardHandler(void){
 		YKTickHandler();
 	}
 	/*
+	//Commented out for lab6
 	else{
 		printNewLine();  
 		printString("KEYPRESS (");
@@ -48,12 +51,14 @@ void YKTickHandler(){
     static int data = 0;
 	
 	++YKTickNum;
+	
 	#if DISPLAY_TICKS == 1
 	printString("\nTick ");
 	printInt(YKTickNum);
 	printString("\n");
 	#endif
 
+	//This decrements the delay counts for all suspended tasks
 	YKUpdateSuspendedTasks();
 	
 	/* create a message with tick (sequence #) and pseudo-random data */

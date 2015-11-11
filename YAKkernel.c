@@ -441,6 +441,10 @@ YKQ* YKQCreate(void **start, unsigned size){
 	YKExitMutex();
 	return (void*)queue;
 }
+
+/* A function called by a task to delay if there's nothing in the queue 
+		return the message at the front of the queue when you return*/
+
 void* YKQPend(YKQ *queue){
 	void* message;
 	YKMQ* messQ = (YKMQ*)queue;
@@ -451,28 +455,44 @@ void* YKQPend(YKQ *queue){
 	#endif
 	
 	YKEnterMutex();
+	//if there isn't anything in the queue delay the task
 	if (messQ->length == 0){
 		#if DEBUG==1 || DEBUG_QUEUE == 1
 		printString("Delaying current Task for Queue\n");
 		#endif
+		
+		//Check to make sure there isn't already a task waiting
+		if (messQ->tasks != NULL){
+			printString("\n\nERROR: TWO TASKS ARE WAITING ON THE SAME QUEUE.----------------------\n\n");
+			YKDelayTask(2);
+		}
+		
+		//Add the current task to the queue's suspended list
 		YKRemoveFromList(YKCurrentTask);
+		//Set the queue's task list head as the current task
 		YKCurrentTask->next = messQ->tasks;
 		messQ->tasks = YKCurrentTask;
 		if (YKISRDepth == 0){
+			//generate the hardware interrupt that will save context and switch away
 			asm("int 11h");
 		}
 		else{
+			//You shouldn't ever pend on a queue in an ISR but if you do, then this will run
 			printString("\n\nERROR: CANNOT SWITCH TASK SINCE IN ISR------------------------\n\n");
+			exit(6); //if you get an exit code 6 then you did something realy dumb
 		}
 	}	
 	YKExitMutex();
-	//We will be delayed here
+	//We will be delayed here since we exit mutex
 	YKEnterMutex();
 	
 	//If we return to this point then there is something in the queue
 	messQ->length = messQ->length - 1;
 	
+	//Get the message from the queue
 	message = messQ->queue[messQ->head];
+	
+	//Set the Head correctly
 	++(messQ->head);
 	if (messQ->head == messQ->size )
 		messQ->head = 0;
@@ -487,11 +507,17 @@ void* YKQPend(YKQ *queue){
 	return message;
 	
 }
+
+/* Posts to a message queue */
+/*		Returns 0 if full, otherwise the length of the queue */
 int YKQPost(YKQ *queue, void *msg){
 	YKMQ* messQ = (YKMQ*)queue;
 	TCBp currTask;
 	TCBp addTask;
+	
+	//Make sure we aren't interrupted
 	YKEnterMutex();
+	
 	#if DEBUG==1 || DEBUG_QUEUE == 1
 	printQueue(messQ);
 	printString("Adding to queue with ");
@@ -499,31 +525,36 @@ int YKQPost(YKQ *queue, void *msg){
 	printString(" messages.\n");
 	#endif
 	
+	//If we are already full don't try to post
 	if (messQ->length >= messQ->size){
 		#if DEBUG==1 || DEBUG_QUEUE == 1
 		printString("Overflow of Queue\n");
 		#endif
+		//return 0 so they know we are full
 		return 0;
 	}
+	
+	//Add to the queue and increase it's count
 	++(messQ->length);
 	messQ->queue[messQ->tail] = msg;
 	
+	//Set the tail to the next open location
 	++(messQ->tail);
 	if (messQ->tail == messQ->size )
 		messQ->tail = 0;
 	
-	
+	//Reactivate all the tasks waiting on this queue
 	currTask = messQ->tasks;
 	while (currTask != NULL && currTask != currTask->next){
 		addTask = currTask;
 		currTask = currTask->next;
 		YKAddToReadyList(addTask);
 	}
-
+	//make sure there aren't any tasks waiting for this queue anymore
 	messQ->tasks = NULL;	
 	
 	YKExitMutex();
-	return 5;
+	return messQ->length;
 }
 
 /* ----------------- Helper functions TCB structure ----------------- */
@@ -531,6 +562,7 @@ void printCurrentTask(){
 	printTCB(YKCurrentTask);
 }
 
+//Prints the queue and it's waiting tasks
 void printQueue(YKMQ* queue){
 	int i =0;
 	printString("Queue size:");
@@ -551,6 +583,7 @@ void printQueue(YKMQ* queue){
 	printString("]\n");
 }
 
+//print a task control black and if it has a next task then print that until it's not null
 void printTCB(void* ptcb){
 	TCBp tcb = (TCBp) ptcb;
 	
@@ -558,7 +591,6 @@ void printTCB(void* ptcb){
 		printString("None\n");
 		return;
 	}
-	
 	
 	printString("TCB(");
 	printInt(tcb->priority);
@@ -574,6 +606,8 @@ void printTCB(void* ptcb){
 	else
 		printString(" \n");
 }
+
+//prints the ready, suspended, and semaphore blocked task lists
 void printTaskLists(){
 	int i = 0;
 	printString("Ready Tasks:  ");

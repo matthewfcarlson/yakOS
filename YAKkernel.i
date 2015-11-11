@@ -454,21 +454,33 @@ YKQ* YKQCreate(void **start, unsigned size){
 	YKExitMutex();
 	return (void*)queue;
 }
+#line 448 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
 void* YKQPend(YKQ *queue){
 	void* message;
 	YKMQ* messQ = (YKMQ*)queue;
-#line 453 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+#line 457 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
 	YKEnterMutex();
+
 	if (messQ->length == 0){
-#line 458 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+#line 465 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+		if (messQ->tasks !=  0 ){
+			printString("\n\nERROR: TWO TASKS ARE WAITING ON THE SAME QUEUE.----------------------\n\n");
+			YKDelayTask(2);
+		}
+
+
 		YKRemoveFromList(YKCurrentTask);
+
 		YKCurrentTask->next = messQ->tasks;
 		messQ->tasks = YKCurrentTask;
 		if (YKISRDepth == 0){
+
 			asm("int 11h");
 		}
 		else{
+
 			printString("\n\nERROR: CANNOT SWITCH TASK SINCE IN ISR------------------------\n\n");
+			exit(6);
 		}
 	}
 	YKExitMutex();
@@ -478,26 +490,37 @@ void* YKQPend(YKQ *queue){
 
 	messQ->length = messQ->length - 1;
 
+
 	message = messQ->queue[messQ->head];
+
+
 	++(messQ->head);
 	if (messQ->head == messQ->size )
 		messQ->head = 0;
-#line 487 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+#line 507 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
 	return message;
 
 }
+
+
+
 int YKQPost(YKQ *queue, void *msg){
 	YKMQ* messQ = (YKMQ*)queue;
 	TCBp currTask;
 	TCBp addTask;
+
+
 	YKEnterMutex();
-#line 502 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+#line 529 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
 	if (messQ->length >= messQ->size){
-#line 506 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+#line 534 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
 		return 0;
 	}
+
+
 	++(messQ->length);
 	messQ->queue[messQ->tail] = msg;
+
 
 	++(messQ->tail);
 	if (messQ->tail == messQ->size )
@@ -514,13 +537,14 @@ int YKQPost(YKQ *queue, void *msg){
 	messQ->tasks =  0 ;
 
 	YKExitMutex();
-	return 5;
+	return messQ->length;
 }
 
 
 void printCurrentTask(){
 	printTCB(YKCurrentTask);
 }
+
 
 void printQueue(YKMQ* queue){
 	int i =0;
@@ -542,6 +566,7 @@ void printQueue(YKMQ* queue){
 	printString("]\n");
 }
 
+
 void printTCB(void* ptcb){
 	TCBp tcb = (TCBp) ptcb;
 
@@ -549,7 +574,6 @@ void printTCB(void* ptcb){
 		printString("None\n");
 		return;
 	}
-
 
 	printString("TCB(");
 	printInt(tcb->priority);
@@ -565,6 +589,8 @@ void printTCB(void* ptcb){
 	else
 		printString(" \n");
 }
+
+
 void printTaskLists(){
 	int i = 0;
 	printString("Ready Tasks:  ");
