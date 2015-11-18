@@ -604,9 +604,10 @@ int YKEventReadyToUnblock(YKEventGroup* event, unsigned waitCondition){
 void YKEventSet(YKEVENT *eventpointer, unsigned eventMask){
 
 	TCBp task;
-	TCBp nexttask;
+	TCBp nexttask =  0 ;
 	int switchNeeded = 0;
 	YKEventGroup* event = (YKEventGroup*) eventpointer;
+
 
 	if (eventpointer ==  0  || !YKIsRunning){
 		printString("Not ready for event input\n");

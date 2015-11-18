@@ -623,10 +623,11 @@ int YKEventReadyToUnblock(YKEventGroup* event, unsigned waitCondition){
 void YKEventSet(YKEVENT *eventpointer, unsigned eventMask){
 	
 	TCBp task;
-	TCBp nexttask;
+	TCBp nexttask = NULL;
 	int switchNeeded = 0;
 	YKEventGroup* event = (YKEventGroup*) eventpointer;
 	
+	//make sure we are good to go
 	if (eventpointer == NULL || !YKIsRunning){
 		printString("Not ready for event input\n");
 		return;
@@ -642,10 +643,10 @@ void YKEventSet(YKEVENT *eventpointer, unsigned eventMask){
 		if (YKEventReadyToUnblock(event,task->blockReason)){
 			//unblock the task
 			switchNeeded = 1;
-			
+			//move the pointer ahead if needs be
 			if (event->blockedTasks == task)
 				event->blockedTasks = task->next;
-			
+			//add it back to the lists
 			YKRemoveFromList(task);
 			YKAddToReadyList(task);
 		}
