@@ -557,6 +557,20 @@ int YKQPost(YKQ *queue, void *msg){
 	return messQ->length;
 }
 
+/* -----------------  Event Queue stuff -----------------*/
+YKEVENT* YKEventCreate(unsigned initialValue){
+	return NULL;
+}
+unsigned YKEventPend(YKEVENT *event, unsigned eventMask, int waitMode){
+	return 5;
+}
+void YKEventSet(YKEVENT *event, unsigned eventMask){
+	
+}
+void YKEventReset(YKEVENT *event, unsigned eventMask){
+	
+}
+
 /* ----------------- Helper functions TCB structure ----------------- */
 void printCurrentTask(){
 	printTCB(YKCurrentTask);
