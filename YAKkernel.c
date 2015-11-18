@@ -2,6 +2,7 @@
 #include "clib.h"
 #define DEBUG 0
 #define DEBUG_QUEUE 0
+#define DEBUG_EVENT 0
 
 /* ----------------- TCB stuff ----------------- */
 typedef struct taskblock *TCBp;
@@ -9,7 +10,7 @@ typedef struct taskblock *TCBp;
 typedef struct taskblock
 {
     void* stackPtr;		/* pointer to current top of stack */
-    int state;			/* current state */
+    unsigned blockReason;/* reasons we are delayed */
     int priority;		/* current priority */
     int delayTicks;		/* #ticks yet to wait */
     TCBp next;			/* forward ptr for dbl linked list */
@@ -43,6 +44,15 @@ typedef struct YKMessQueue{
 YKMQ YKQueues[MAX_QUEUES];
 int YKQueueIndex = 0;
 
+/* ----------------- Event Queue Array ----------------- */
+typedef struct YKEventGroups{
+	unsigned events;
+	void* blockedTasks;
+} YKEventGroup;
+
+unsigned YKEventGroupIndex = 0;
+YKEventGroup YKEventGroupList[MAX_EVENTS];
+
 /* ----------------- Global Variables ----------------- */
 unsigned YKCtxSwCount; // - Global variable that tracks context switches 
 unsigned YKIdleCount;  // - Global variable incremented by idle task 
@@ -53,6 +63,7 @@ int YKIsRunning;
 void YKAddToSuspendedList(TCBp task);
 void YKAddToReadyList(TCBp task);
 void YKRemoveFromList(TCBp task);
+int YKEventReadyToUnblock(YKEventGroup* event, unsigned waitCondition);
 void printCurrentTask();
 void printTCB(void* ptcb);
 void SwitchContext();
@@ -164,7 +175,7 @@ void YKNewTask(void* taskFunc, void* taskStack, int priority){
 	newTask->next = NULL;	//links to the next task
 	newTask->prev = NULL; 
 	newTask->delayTicks = 0;
-	newTask->state = 1;
+	newTask->blockReason = NULL;
 	//Add to the ready list
 	YKAddToReadyList(newTask);
 	if (YKIsRunning && YKCurrentTask == NULL)
@@ -559,16 +570,98 @@ int YKQPost(YKQ *queue, void *msg){
 
 /* -----------------  Event Queue stuff -----------------*/
 YKEVENT* YKEventCreate(unsigned initialValue){
-	return NULL;
+	YKEventGroup* event;
+	YKEnterMutex();
+	event = &YKEventGroupList[YKEventGroupIndex];
+	event->events = initialValue;
+	event->blockedTasks = NULL;
+	++YKEventGroupIndex;
+	YKExitMutex();
+	return (YKEVENT*)event;
 }
-unsigned YKEventPend(YKEVENT *event, unsigned eventMask, int waitMode){
-	return 5;
+unsigned YKEventPend(YKEVENT *eventpointer, unsigned eventMask, int waitMode){
+	YKEventGroup* event = (YKEventGroup*) eventpointer;
+	YKEnterMutex();
+	YKCurrentTask->blockReason = eventMask | waitMode;
+	
+	//check to see if we already to unblock
+	if (!YKEventReadyToUnblock(event,eventMask)){
+		//delay the task
+		#if DEBUG == 1 || DEBUG_EVENT == 1
+		printString("Delaying task into event group\n");
+		#endif
+		YKRemoveFromList(YKCurrentTask);
+		if (event->blockedTasks != NULL)
+			((TCBp)event->blockedTasks)->prev = YKCurrentTask;
+		
+		YKCurrentTask->next = event->blockedTasks;
+		event->blockedTasks = YKCurrentTask;
+		//switch context
+		if (YKISRDepth == 0){
+			asm("int 11h");
+		}
+		YKExitMutex();
+	}
+	return event->events;
 }
-void YKEventSet(YKEVENT *event, unsigned eventMask){
+int YKEventReadyToUnblock(YKEventGroup* event, unsigned waitCondition){
+	//check to see if we need to unblock tasks
+	unsigned mask = (waitCondition & ~ (unsigned)EVENT_WAIT_FLAGS);
+	unsigned condition = event->events & mask;
+	if (waitCondition & EVENT_WAIT_ANY){ //ANY TASK IS GOOD
+		if (condition){
+			return 1;
+		}		
+	}
+	else {
+		if (condition == mask){
+			return 1;
+		}		
+	}
+	return 0;
+}
+void YKEventSet(YKEVENT *eventpointer, unsigned eventMask){
+	
+	TCBp task;
+	TCBp nexttask;
+	int switchNeeded = 0;
+	YKEventGroup* event = (YKEventGroup*) eventpointer;
+	
+	if (eventpointer == NULL || !YKIsRunning){
+		printString("Not ready for event input\n");
+		return;
+	}
+	
+	YKEnterMutex();	
+	
+	event->events |= eventMask;
+	
+	task = event->blockedTasks;
+	while (task != NULL){
+		nexttask = task->next;
+		if (YKEventReadyToUnblock(event,task->blockReason)){
+			//unblock the task
+			switchNeeded = 1;
+			
+			if (event->blockedTasks == task)
+				event->blockedTasks = task->next;
+			
+			YKRemoveFromList(task);
+			YKAddToReadyList(task);
+		}
+		task = nexttask;
+	}
+	if (YKISRDepth == 0 && switchNeeded){
+		asm("int 11h");
+	}
+	YKExitMutex();
 	
 }
-void YKEventReset(YKEVENT *event, unsigned eventMask){
-	
+void YKEventReset(YKEVENT *eventpointer, unsigned eventMask){
+	YKEventGroup* event = (YKEventGroup*) eventpointer;
+	YKEnterMutex();
+	event->events &= ~eventMask;
+	YKExitMutex();
 }
 
 /* ----------------- Helper functions TCB structure ----------------- */

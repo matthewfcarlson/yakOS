@@ -6,77 +6,158 @@
 YKTickNum:
 	DW	0
 L_ISRHandlers_2:
-	DB	"DELAY COMPLETE",0
+	DB	") IGNORED",0xA,0
 L_ISRHandlers_1:
-	DB	"DELAY KEY PRESSED",0
+	DB	0xA,"KEYPRESS (",0
 	ALIGN	2
 KeyboardHandler:
-	; >>>>> Line:	16
+	; >>>>> Line:	15
 	; >>>>> void KeyboardHandler(void){ 
 	jmp	L_ISRHandlers_3
 L_ISRHandlers_4:
+	; >>>>> Line:	17
+	; >>>>> c = KeyBuffer; 
+	mov	al, byte [KeyBuffer]
+	mov	byte [bp-1], al
 	; >>>>> Line:	19
-	; >>>>> GlobalFlag = 1; 
-	mov	word [GlobalFlag], 1
-	; >>>>> Line:	21
-	; >>>>> if(((char) KeyBuffer) == 'd'){ 
-	cmp	byte [KeyBuffer], 100
+	; >>>>> if(c == 'a') YKEventSet(charEvent,  0x1 ); 
+	cmp	byte [bp-1], 97
 	jne	L_ISRHandlers_5
-	; >>>>> Line:	22
-	; >>>>> printNewLine(); 
-	call	printNewLine
-	; >>>>> Line:	23
-	; >>>>> printString("DELAY KEY PRESSED"); 
-	mov	ax, L_ISRHandlers_1
+	; >>>>> Line:	19
+	; >>>>> if(c == 'a') YKEventSet(charEvent,  0x1 ); 
+	mov	ax, 1
 	push	ax
-	call	printString
-	add	sp, 2
-	; >>>>> Line:	24
-	; >>>>> printNewLine(); 
-	call	printNewLine
-	; >>>>> Line:	25
-	; >>>>> for(i = 0; i < 5000; i++){} 
-	mov	word [bp-2], 0
-	jmp	L_ISRHandlers_7
-L_ISRHandlers_6:
-L_ISRHandlers_9:
-	; >>>>> Line:	25
-	; >>>>> for(i = 0; i < 5000; i++){} 
-	inc	word [bp-2]
-L_ISRHandlers_7:
-	cmp	word [bp-2], 5000
-	jl	L_ISRHandlers_6
-L_ISRHandlers_8:
-	; >>>>> Line:	26
-	; >>>>> printString("DELAY COMPLETE"); 
-	mov	ax, L_ISRHandlers_2
-	push	ax
-	call	printString
-	add	sp, 2
-	; >>>>> Line:	27
-	; >>>>> printNewLine(); 
-	call	printNewLine
-	jmp	L_ISRHandlers_10
+	push	word [charEvent]
+	call	YKEventSet
+	add	sp, 4
+	jmp	L_ISRHandlers_6
 L_ISRHandlers_5:
-	; >>>>> Line:	29
-	; >>>>> else if(((char) KeyBuffer) == 'l'){ 
-	cmp	byte [KeyBuffer], 108
+	; >>>>> Line:	20
+	; >>>>> else if(c == 'b') YKEventSet(charEvent,  0x2 ); 
+	cmp	byte [bp-1], 98
+	jne	L_ISRHandlers_7
+	; >>>>> Line:	20
+	; >>>>> else if(c == 'b') YKEventSet(charEvent,  0x2 ); 
+	mov	ax, 2
+	push	ax
+	push	word [charEvent]
+	call	YKEventSet
+	add	sp, 4
+	jmp	L_ISRHandlers_8
+L_ISRHandlers_7:
+	; >>>>> Line:	21
+	; >>>>> else if(c == 'c') YKEventSet(charEvent,  0x4 ); 
+	cmp	byte [bp-1], 99
+	jne	L_ISRHandlers_9
+	; >>>>> Line:	21
+	; >>>>> else if(c == 'c') YKEventSet(charEvent,  0x4 ); 
+	mov	ax, 4
+	push	ax
+	push	word [charEvent]
+	call	YKEventSet
+	add	sp, 4
+	jmp	L_ISRHandlers_10
+L_ISRHandlers_9:
+	; >>>>> Line:	22
+	; >>>>> else if(c == 'd') YKEventSet(charEvent,  0x1  |  0x2  |   
+	cmp	byte [bp-1], 100
 	jne	L_ISRHandlers_11
-	; >>>>> Line:	30
-	; >>>>> printTaskLists(); 
-	call	printTaskLists
+	; >>>>> Line:	22
+	; >>>>> else if(c == 'd') YKEventSet(charEvent,  0x1  |  0x2  |   
+	mov	ax, 7
+	push	ax
+	push	word [charEvent]
+	call	YKEventSet
+	add	sp, 4
 	jmp	L_ISRHandlers_12
 L_ISRHandlers_11:
-	; >>>>> Line:	32
-	; >>>>> else if(((char) KeyBuffer) == 't'){ 
-	cmp	byte [KeyBuffer], 116
+	; >>>>> Line:	23
+	; >>>>> else if(c == '1') YKEventSet(numEvent,  0x1 ); 
+	cmp	byte [bp-1], 49
 	jne	L_ISRHandlers_13
-	; >>>>> Line:	33
-	; >>>>> YKTickHandler(); 
-	call	YKTickHandler
+	; >>>>> Line:	23
+	; >>>>> else if(c == '1') YKEventSet(numEvent,  0x1 ); 
+	mov	ax, 1
+	push	ax
+	push	word [numEvent]
+	call	YKEventSet
+	add	sp, 4
+	jmp	L_ISRHandlers_14
 L_ISRHandlers_13:
+	; >>>>> Line:	24
+	; >>>>> else if(c == 'l') printTaskLists(); 
+	cmp	byte [bp-1], 108
+	jne	L_ISRHandlers_15
+	; >>>>> Line:	24
+	; >>>>> else if(c == 'l') printTaskLists(); 
+	call	printTaskLists
+	jmp	L_ISRHandlers_16
+L_ISRHandlers_15:
+	; >>>>> Line:	25
+	; >>>>> else if(c == 't') YKTickHandler(); 
+	cmp	byte [bp-1], 116
+	jne	L_ISRHandlers_17
+	; >>>>> Line:	25
+	; >>>>> else if(c == 't') YKTickHandler(); 
+	call	YKTickHandler
+	jmp	L_ISRHandlers_18
+L_ISRHandlers_17:
+	; >>>>> Line:	26
+	; >>>>> else if(c == '2') YKEventSet(numEvent,  0x2 ); 
+	cmp	byte [bp-1], 50
+	jne	L_ISRHandlers_19
+	; >>>>> Line:	26
+	; >>>>> else if(c == '2') YKEventSet(numEvent,  0x2 ); 
+	mov	ax, 2
+	push	ax
+	push	word [numEvent]
+	call	YKEventSet
+	add	sp, 4
+	jmp	L_ISRHandlers_20
+L_ISRHandlers_19:
+	; >>>>> Line:	27
+	; >>>>> else if(c == '3') YKEventSet(numEvent,  0x4 ); 
+	cmp	byte [bp-1], 51
+	jne	L_ISRHandlers_21
+	; >>>>> Line:	27
+	; >>>>> else if(c == '3') YKEventSet(numEvent,  0x4 ); 
+	mov	ax, 4
+	push	ax
+	push	word [numEvent]
+	call	YKEventSet
+	add	sp, 4
+	jmp	L_ISRHandlers_22
+L_ISRHandlers_21:
+	; >>>>> Line:	29
+	; >>>>> print("\nKEYPRESS (", 11); 
+	mov	ax, 11
+	push	ax
+	mov	ax, L_ISRHandlers_1
+	push	ax
+	call	print
+	add	sp, 4
+	; >>>>> Line:	30
+	; >>>>> printChar(c); 
+	push	word [bp-1]
+	call	printChar
+	add	sp, 2
+	; >>>>> Line:	31
+	; >>>>> print(") IGNORED\n", 10); 
+	mov	ax, 10
+	push	ax
+	mov	ax, L_ISRHandlers_2
+	push	ax
+	call	print
+	add	sp, 4
+L_ISRHandlers_22:
+L_ISRHandlers_20:
+L_ISRHandlers_18:
+L_ISRHandlers_16:
+L_ISRHandlers_14:
 L_ISRHandlers_12:
 L_ISRHandlers_10:
+L_ISRHandlers_8:
+L_ISRHandlers_6:
 	mov	sp, bp
 	pop	bp
 	ret
@@ -86,88 +167,21 @@ L_ISRHandlers_3:
 	push	cx
 	jmp	L_ISRHandlers_4
 	ALIGN	2
-L_ISRHandlers_15:
-	DW	0
-L_ISRHandlers_16:
-	DW	0
-L_ISRHandlers_17:
-	DB	"  TickISR: queue overflow! ",0xA,0
-	ALIGN	2
 YKTickHandler:
-	; >>>>> Line:	48
+	; >>>>> Line:	46
 	; >>>>> void YKTickHandler(){ 
-	jmp	L_ISRHandlers_18
-L_ISRHandlers_19:
-	; >>>>> Line:	53
+	jmp	L_ISRHandlers_24
+L_ISRHandlers_25:
+	; >>>>> Line:	48
 	; >>>>> ++YKTickNum; 
 	inc	word [YKTickNum]
-	; >>>>> Line:	62
+	; >>>>> Line:	57
 	; >>>>> YKUpdateSuspendedTasks(); 
 	call	YKUpdateSuspendedTasks
-	; >>>>> Line:	65
-	; >>>>> MsgArray[next].tick = YKTickNum; 
-	mov	ax, word [L_ISRHandlers_15]
-	shl	ax, 1
-	shl	ax, 1
-	mov	si, ax
-	add	si, MsgArray
-	mov	ax, word [YKTickNum]
-	mov	word [si], ax
-	; >>>>> Line:	66
-	; >>>>> data = (data + 89) % 100; 
-	mov	ax, word [L_ISRHandlers_16]
-	add	ax, 89
-	cwd
-	mov	cx, 100
-	idiv	cx
-	mov	ax, dx
-	mov	word [L_ISRHandlers_16], ax
-	; >>>>> Line:	67
-	; >>>>> MsgArray[next].data = data; 
-	mov	ax, word [L_ISRHandlers_15]
-	shl	ax, 1
-	shl	ax, 1
-	add	ax, MsgArray
-	mov	si, ax
-	add	si, 2
-	mov	ax, word [L_ISRHandlers_16]
-	mov	word [si], ax
-	; >>>>> Line:	68
-	; >>>>> if (YKQPost(MsgQPtr, (void *) &(MsgArray[next])) == 0) 
-	mov	ax, word [L_ISRHandlers_15]
-	shl	ax, 1
-	shl	ax, 1
-	add	ax, MsgArray
-	push	ax
-	push	word [MsgQPtr]
-	call	YKQPost
-	add	sp, 4
-	test	ax, ax
-	jne	L_ISRHandlers_20
-	; >>>>> Line:	69
-	; >>>>> printString("  TickISR: queue overflow! \n"); 
-	mov	ax, L_ISRHandlers_17
-	push	ax
-	call	printString
-	add	sp, 2
-	jmp	L_ISRHandlers_21
-L_ISRHandlers_20:
-	; >>>>> Line:	70
-	; >>>>> else if (++next >=  20 ) 
-	mov	ax, word [L_ISRHandlers_15]
-	inc	ax
-	mov	word [L_ISRHandlers_15], ax
-	cmp	ax, 20
-	jl	L_ISRHandlers_22
-	; >>>>> Line:	71
-	; >>>>> next = 0; 
-	mov	word [L_ISRHandlers_15], 0
-L_ISRHandlers_22:
-L_ISRHandlers_21:
 	mov	sp, bp
 	pop	bp
 	ret
-L_ISRHandlers_18:
+L_ISRHandlers_24:
 	push	bp
 	mov	bp, sp
-	jmp	L_ISRHandlers_19
+	jmp	L_ISRHandlers_25

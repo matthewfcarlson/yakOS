@@ -1,13 +1,6 @@
 #include "clib.h"
 #include "YAKkernel.h"
 
-#define EVENT_A_KEY  0x1
-#define EVENT_B_KEY  0x2
-#define EVENT_C_KEY  0x4
-
-#define EVENT_1_KEY  0x1
-#define EVENT_2_KEY  0x2
-#define EVENT_3_KEY  0x4
 
 extern YKEVENT *charEvent;
 extern YKEVENT *numEvent;
@@ -15,34 +8,28 @@ extern YKEVENT *numEvent;
 extern int KeyBuffer; 
 extern void printTaskLists();
 
-extern YKQ* MsgQPtr; 
-extern struct msg MsgArray[];
-extern int GlobalFlag;
-
-
 extern void YKUpdateSuspendedTasks();
 unsigned YKTickNum = 0;
 
 /* ----------------- ISR handlers ----------------- */
 void KeyboardHandler(void){
-	int i;
-	//if any key is pressed set the global flag
-	GlobalFlag = 1;
-	
-	if(((char) KeyBuffer) == 'd'){
-		printNewLine();  
-		printString("DELAY KEY PRESSED");
-		printNewLine(); 
-		for(i = 0; i < 5000; i++){}
-		printString("DELAY COMPLETE");
-		printNewLine();
-	}
-	else if(((char) KeyBuffer) == 'l'){
-		printTaskLists();
-	}
-	else if(((char) KeyBuffer) == 't'){
-		YKTickHandler();
-	}
+	char c;
+    c = KeyBuffer;
+
+    if(c == 'a') YKEventSet(charEvent, EVENT_A_KEY);
+    else if(c == 'b') YKEventSet(charEvent, EVENT_B_KEY);
+    else if(c == 'c') YKEventSet(charEvent, EVENT_C_KEY);
+    else if(c == 'd') YKEventSet(charEvent, EVENT_A_KEY | EVENT_B_KEY | EVENT_C_KEY);
+    else if(c == '1') YKEventSet(numEvent, EVENT_1_KEY);
+	else if(c == 'l') printTaskLists();
+	else if(c == 't') YKTickHandler();
+    else if(c == '2') YKEventSet(numEvent, EVENT_2_KEY);
+    else if(c == '3') YKEventSet(numEvent, EVENT_3_KEY);
+    else {
+        print("\nKEYPRESS (", 11);
+        printChar(c);
+        print(") IGNORED\n", 10);
+    }
 	/*
 	//Commented out for lab6
 	else{
@@ -58,9 +45,6 @@ void KeyboardHandler(void){
 //Handles the tick ISR
 void YKTickHandler(){
 	
-	static int next = 0;
-    static int data = 0;
-	
 	++YKTickNum;
 	
 	#if DISPLAY_TICKS == 1
@@ -72,14 +56,6 @@ void YKTickHandler(){
 	//This decrements the delay counts for all suspended tasks
 	YKUpdateSuspendedTasks();
 	
-	/* create a message with tick (sequence #) and pseudo-random data */
-    MsgArray[next].tick = YKTickNum;
-    data = (data + 89) % 100;
-    MsgArray[next].data = data;
-    if (YKQPost(MsgQPtr, (void *) &(MsgArray[next])) == 0)
-	printString("  TickISR: queue overflow! \n");
-    else if (++next >= MSGARRAYSIZE)
-	next = 0;
 	
 }
 

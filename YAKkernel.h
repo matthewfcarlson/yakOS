@@ -4,6 +4,7 @@ The YAK kernel functions
 #define NULL 0
 #define MAX_TASKS 5
 #define MAX_QUEUES 5
+#define MAX_EVENTS 5
 #define DEFAULTSTACKSIZE 100
 #define DEFAULTFLAGS 64
 #define STATE_RUNNING   1
@@ -13,14 +14,26 @@ The YAK kernel functions
 #define DISPLAY_TICKS 	0 	//if you want TICK n to show
 #define MSGARRAYSIZE      20
 
+//Events
+
+#define EVENT_A_KEY  0x1
+#define EVENT_B_KEY  0x2
+#define EVENT_C_KEY  0x4
+
+#define EVENT_1_KEY  0x1
+#define EVENT_2_KEY  0x2
+#define EVENT_3_KEY  0x4
+
+#define EVENT_WAIT_ALL 0x10
+#define EVENT_WAIT_ANY 0x8
+#define EVENT_WAIT_FLAGS 0x18
+
 typedef struct semaphore
 {
     int count;			/* the current current state */
     void* tasks;		/* current delayed tasks */
     
 }  YKSEM;
-
-
 
 struct msg 
 {

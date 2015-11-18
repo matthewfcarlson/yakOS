@@ -1,5 +1,5 @@
-#line 1 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/lab6app.c"
-#line 7 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/lab6app.c"
+#line 1 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/lab7app.c"
+#line 6 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/lab7app.c"
 #line 1 "clib.h"
 
 
@@ -25,17 +25,15 @@ void exit(unsigned char code);
 
 
 void signalEOI(void);
-#line 8 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/lab6app.c"
+#line 7 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/lab7app.c"
 #line 1 "YAKkernel.h"
-#line 16 "YAKkernel.h"
+#line 31 "YAKkernel.h"
 typedef struct semaphore
 {
     int count;
     void* tasks;
 
 } YKSEM;
-
-
 
 struct msg
 {
@@ -45,7 +43,7 @@ struct msg
 
 typedef void* YKQ;
 
-
+typedef void* YKEVENT;
 
 void YKInitialize();
 void YKEnterMutex();
@@ -68,130 +66,105 @@ YKQ* YKQCreate(void **start, unsigned size);
 void* YKQPend(YKQ *queue);
 int YKQPost(YKQ *queue, void *msg);
 
-
+YKEVENT* YKEventCreate(unsigned initialValue);
+unsigned YKEventPend(YKEVENT *event, unsigned eventMask, int waitMode);
+void YKEventSet(YKEVENT *event, unsigned eventMask);
+void YKEventReset(YKEVENT *event, unsigned eventMask);
 
 
 extern unsigned YKCtxSwCount;
 extern unsigned YKIdleCount;
-#line 9 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/lab6app.c"
+#line 8 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/lab7app.c"
 
 
 
 
-struct msg MsgArray[ 20 ];
+YKEVENT *charEvent;
+YKEVENT *numEvent;
 
-int ATaskStk[ 512 ];
-int BTaskStk[ 512 ];
+int CharTaskStk[ 512 ];
+int AllCharsTaskStk[ 512 ];
+int AllNumsTaskStk[ 512 ];
 int STaskStk[ 512 ];
 
-extern unsigned YKTickNum;
-int GlobalFlag;
 
-void *MsgQ[ 10 ];
-YKQ *MsgQPtr;
 
-void ATask(void)
+void CharTask(void)
 {
-    struct msg *tmp;
-    int min, max, count;
+    unsigned events;
 
-    min = 100;
-    max = 0;
-    count = 0;
+    printString("Started CharTask     (2)\n");
 
-    while (1)
-    {
-        tmp = (struct msg *) YKQPend(MsgQPtr);
+    while(1) {
+        events = YKEventPend(charEvent,
+                             0x1  |  0x2  |  0x4 ,
+                             0x8 );
 
-
-        if (tmp->tick != count+1)
-        {
-            print("! Dropped msgs: tick ", 21);
-            if (tmp->tick - (count+1) > 1) {
-                printInt(count+1);
-                printChar('-');
-                printInt(tmp->tick-1);
-                printNewLine();
-            }
-            else {
-                printInt(tmp->tick-1);
-                printNewLine();
-            }
+        if(events == 0) {
+            printString("Oops! At least one event should be set "
+                        "in return value!\n");
         }
 
+        if(events &  0x1 ) {
+            printString("CharTask     (A)\n");
+            YKEventReset(charEvent,  0x1 );
+        }
 
-        count = tmp->tick;
+        if(events &  0x2 ) {
+            printString("CharTask     (B)\n");
+            YKEventReset(charEvent,  0x2 );
+        }
 
-
-        if (tmp->data < min)
-            min = tmp->data;
-        if (tmp->data > max)
-            max = tmp->data;
-
-
-        print("Ticks: ", 7);
-        printInt(count);
-        print("\t", 1);
-        print("Min: ", 5);
-        printInt(min);
-        print("\t", 1);
-        print("Max: ", 5);
-        printInt(max);
-        printNewLine();
-    }
-}
-
-void BTask(void)
-{
-    int busycount, curval, j, flag, chcount;
-    unsigned tickNum;
-
-    curval = 1001;
-    chcount = 0;
-
-    while (1)
-    {
-        YKDelayTask(2);
-
-        if (GlobalFlag == 1)
-        {
-            YKEnterMutex();
-            busycount = YKTickNum;
-            YKExitMutex();
-
-            while (1)
-            {
-                YKEnterMutex();
-                tickNum = YKTickNum;
-                YKExitMutex();
-                if(tickNum >= busycount + 5) break;
-
-                curval += 2;
-                flag = 0;
-                for (j = 3; (j*j) < curval; j += 2)
-                {
-                    if (curval % j == 0)
-                    {
-                        flag = 1;
-                        break;
-                    }
-                }
-                if (!flag)
-                {
-                    printChar('.');
-                    if (++chcount > 75)
-                    {
-                        printNewLine();
-                        chcount = 0;
-                    }
-                }
-            }
-            printNewLine();
-            chcount = 0;
-            GlobalFlag = 0;
+        if(events &  0x4 ) {
+            printString("CharTask     (C)\n");
+            YKEventReset(charEvent,  0x4 );
         }
     }
 }
+
+
+void AllCharsTask(void)
+{
+    unsigned events;
+
+    printString("Started AllCharsTask (3)\n");
+
+    while(1) {
+        events = YKEventPend(charEvent,
+                             0x1  |  0x2  |  0x4 ,
+                             0x10 );
+
+
+        if(events != 0) {
+            printString("Oops! Char events weren't reset by CharTask!\n");
+        }
+
+        printString("AllCharsTask (D)\n");
+    }
+}
+
+
+void AllNumsTask(void)
+{
+    unsigned events;
+
+    printString("Started AllNumsTask  (1)\n");
+
+    while(1) {
+        events = YKEventPend(numEvent,
+                             0x1  |  0x2  |  0x4 ,
+                             0x10 );
+
+        if(events != ( 0x1  |  0x2  |  0x4 )) {
+            printString("Oops! All events should be set in return value!\n");
+        }
+
+        printString("AllNumsTask  (123)\n");
+
+        YKEventReset(numEvent,  0x1  |  0x2  |  0x4 );
+    }
+}
+
 
 void STask(void)
 {
@@ -207,8 +180,9 @@ void STask(void)
     max = YKIdleCount / 25;
     YKIdleCount = 0;
 
-    YKNewTask(BTask, (void *) &BTaskStk[ 512 ], 10);
-    YKNewTask(ATask, (void *) &ATaskStk[ 512 ], 20);
+    YKNewTask(CharTask, (void *) &CharTaskStk[ 512 ], 2);
+    YKNewTask(AllNumsTask, (void *) &AllNumsTaskStk[ 512 ], 1);
+    YKNewTask(AllCharsTask, (void *) &AllCharsTaskStk[ 512 ], 3);
 
     while (1)
     {
@@ -233,14 +207,14 @@ void STask(void)
     }
 }
 
+
 void main(void)
 {
     YKInitialize();
 
-
-    GlobalFlag = 0;
-    MsgQPtr = YKQCreate(MsgQ,  10 );
-    YKNewTask(STask, (void *) &STaskStk[ 512 ], 30);
+    charEvent = YKEventCreate(0);
+    numEvent = YKEventCreate(0);
+    YKNewTask(STask, (void *) &STaskStk[ 512 ], 0);
 
     YKRun();
 }
