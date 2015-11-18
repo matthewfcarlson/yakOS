@@ -30,7 +30,7 @@ struct msg
 
 typedef void* YKQ;
 
-
+typedef void* YKEVENT; 
 
 void YKInitialize(); // - Initializes all required kernel data structures 
 void YKEnterMutex(); // - Disables interrupts 
@@ -53,7 +53,10 @@ YKQ* YKQCreate(void **start, unsigned size);
 void* YKQPend(YKQ *queue);
 int YKQPost(YKQ *queue, void *msg);
 
-
+YKEVENT* YKEventCreate(unsigned initialValue); 
+unsigned YKEventPend(YKEVENT *event, unsigned eventMask, int waitMode); 
+void YKEventSet(YKEVENT *event, unsigned eventMask);
+void YKEventReset(YKEVENT *event, unsigned eventMask); 
 
 //Global Variables extern since they are defined in the c code
 extern unsigned YKCtxSwCount; // - Global variable that tracks context switches 
