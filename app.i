@@ -1,5 +1,5 @@
-#line 1 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/lab7app.c"
-#line 6 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/lab7app.c"
+#line 1 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/lab8app.c"
+#line 6 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/lab8app.c"
 #line 1 "clib.h"
 
 
@@ -25,7 +25,15 @@ void exit(unsigned char code);
 
 
 void signalEOI(void);
-#line 7 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/lab7app.c"
+#line 7 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/lab8app.c"
+#line 1 "simptris.h"
+
+
+void SlidePiece(int ID, int direction);
+void RotatePiece(int ID, int direction);
+void SeedSimptris(long seed);
+void StartSimptris(void);
+#line 8 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/lab8app.c"
 #line 1 "YAKkernel.h"
 #line 31 "YAKkernel.h"
 typedef struct semaphore
@@ -74,96 +82,15 @@ void YKEventReset(YKEVENT *event, unsigned eventMask);
 
 extern unsigned YKCtxSwCount;
 extern unsigned YKIdleCount;
-#line 8 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/lab7app.c"
+#line 9 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/lab8app.c"
 
 
 
 
-YKEVENT *charEvent;
-YKEVENT *numEvent;
 
-int CharTaskStk[ 512 ];
-int AllCharsTaskStk[ 512 ];
-int AllNumsTaskStk[ 512 ];
 int STaskStk[ 512 ];
 
 
-
-void CharTask(void)
-{
-    unsigned events;
-
-    printString("Started CharTask     (2)\n");
-
-    while(1) {
-        events = YKEventPend(charEvent,
-                             0x1  |  0x2  |  0x4 ,
-                             0x8 );
-
-        if(events == 0) {
-            printString("Oops! At least one event should be set "
-                        "in return value!\n");
-        }
-
-        if(events &  0x1 ) {
-            printString("CharTask     (A)\n");
-            YKEventReset(charEvent,  0x1 );
-        }
-
-        if(events &  0x2 ) {
-            printString("CharTask     (B)\n");
-            YKEventReset(charEvent,  0x2 );
-        }
-
-        if(events &  0x4 ) {
-            printString("CharTask     (C)\n");
-            YKEventReset(charEvent,  0x4 );
-        }
-    }
-}
-
-
-void AllCharsTask(void)
-{
-    unsigned events;
-
-    printString("Started AllCharsTask (3)\n");
-
-    while(1) {
-        events = YKEventPend(charEvent,
-                             0x1  |  0x2  |  0x4 ,
-                             0x10 );
-
-
-        if(events != 0) {
-            printString("Oops! Char events weren't reset by CharTask!\n");
-        }
-
-        printString("AllCharsTask (D)\n");
-    }
-}
-
-
-void AllNumsTask(void)
-{
-    unsigned events;
-
-    printString("Started AllNumsTask  (1)\n");
-
-    while(1) {
-        events = YKEventPend(numEvent,
-                             0x1  |  0x2  |  0x4 ,
-                             0x10 );
-
-        if(events != ( 0x1  |  0x2  |  0x4 )) {
-            printString("Oops! All events should be set in return value!\n");
-        }
-
-        printString("AllNumsTask  (123)\n");
-
-        YKEventReset(numEvent,  0x1  |  0x2  |  0x4 );
-    }
-}
 
 
 void STask(void)
@@ -179,11 +106,8 @@ void STask(void)
     YKDelayTask(5);
     max = YKIdleCount / 25;
     YKIdleCount = 0;
-
-    YKNewTask(CharTask, (void *) &CharTaskStk[ 512 ], 2);
-    YKNewTask(AllNumsTask, (void *) &AllNumsTaskStk[ 512 ], 1);
-    YKNewTask(AllCharsTask, (void *) &AllCharsTaskStk[ 512 ], 3);
-
+	printString("Starting Simptris\n");
+	StartSimptris();
     while (1)
     {
         YKDelayTask(20);
@@ -193,12 +117,12 @@ void STask(void)
         idleCount = YKIdleCount;
         YKExitMutex();
 
-        printString("<<<<< Context switches: ");
+        printString("<CS: ");
         printInt((int)switchCount);
-        printString(", CPU usage: ");
+        printString(", CPU: ");
         tmp = (int) (idleCount/max);
         printInt(100-tmp);
-        printString("% >>>>>\r\n");
+        printString("% >\r\n");
 
         YKEnterMutex();
         YKCtxSwCount = 0;
@@ -212,9 +136,10 @@ void main(void)
 {
     YKInitialize();
 
-    charEvent = YKEventCreate(0);
-    numEvent = YKEventCreate(0);
+
+
     YKNewTask(STask, (void *) &STaskStk[ 512 ], 0);
+
 
     YKRun();
 }

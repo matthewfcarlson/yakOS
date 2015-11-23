@@ -9,11 +9,11 @@ else
 
 endif
 
-l7.bin:		lab7final.s
-		nasm lab7final.s -o l7.bin -l l7.lst
+l8.bin:		lab8final.s
+		nasm lab8final.s -o l8.bin -l l8.lst
 
-lab7final.s:	clib.s YAKos.s ISRHandlers.s YAKkernel.s app.s
-		cat clib.s YAKos.s ISRHandlers.s YAKkernel.s app.s > lab7final.s
+lab8final.s:	clib.s YAKos.s ISRHandlers.s YAKkernel.s app.s
+		cat clib.s YAKos.s ISRHandlers.s simptris.s YAKkernel.s app.s > lab8final.s
 
 #kernel code
 YAKkernel.s:	YAKkernel.c
@@ -25,10 +25,10 @@ ISRHandlers.s:	ISRHandlers.c
 		c86 -g ISRHandlers.i ISRHandlers.s	
 
 #app code
-app.s:	lab7app.c
-		$(COMPILER) lab7app.c app.i
+app.s:	lab8app.c
+		$(COMPILER) lab8app.c app.i
 		c86 -g app.i app.s
 
 clean:
-		rm lab4.bin lab4.lst l6.bin lab7.lst lab6final.s ISRHandlers.s ISRHandlers.i YAKkernel.s YAKkernel.i app.i app.s 
+		rm l8.lst l8.bin ISRHandlers.s ISRHandlers.i YAKkernel.s YAKkernel.i app.i app.s 
 

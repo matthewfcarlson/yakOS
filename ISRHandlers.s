@@ -5,183 +5,100 @@
 	ALIGN	2
 YKTickNum:
 	DW	0
-L_ISRHandlers_2:
-	DB	") IGNORED",0xA,0
-L_ISRHandlers_1:
-	DB	0xA,"KEYPRESS (",0
 	ALIGN	2
 KeyboardHandler:
 	; >>>>> Line:	15
 	; >>>>> void KeyboardHandler(void){ 
-	jmp	L_ISRHandlers_3
-L_ISRHandlers_4:
+	jmp	L_ISRHandlers_1
+L_ISRHandlers_2:
 	; >>>>> Line:	17
 	; >>>>> c = KeyBuffer; 
 	mov	al, byte [KeyBuffer]
 	mov	byte [bp-1], al
-	; >>>>> Line:	19
-	; >>>>> if(c == 'a') YKEventSet(charEvent,  0x1 ); 
-	cmp	byte [bp-1], 97
-	jne	L_ISRHandlers_5
-	; >>>>> Line:	19
-	; >>>>> if(c == 'a') YKEventSet(charEvent,  0x1 ); 
-	mov	ax, 1
-	push	ax
-	push	word [charEvent]
-	call	YKEventSet
-	add	sp, 4
-	jmp	L_ISRHandlers_6
-L_ISRHandlers_5:
-	; >>>>> Line:	20
-	; >>>>> else if(c == 'b') YKEventSet(charEvent,  0x2 ); 
-	cmp	byte [bp-1], 98
-	jne	L_ISRHandlers_7
-	; >>>>> Line:	20
-	; >>>>> else if(c == 'b') YKEventSet(charEvent,  0x2 ); 
-	mov	ax, 2
-	push	ax
-	push	word [charEvent]
-	call	YKEventSet
-	add	sp, 4
-	jmp	L_ISRHandlers_8
-L_ISRHandlers_7:
-	; >>>>> Line:	21
-	; >>>>> else if(c == 'c') YKEventSet(charEvent,  0x4 ); 
-	cmp	byte [bp-1], 99
-	jne	L_ISRHandlers_9
-	; >>>>> Line:	21
-	; >>>>> else if(c == 'c') YKEventSet(charEvent,  0x4 ); 
-	mov	ax, 4
-	push	ax
-	push	word [charEvent]
-	call	YKEventSet
-	add	sp, 4
-	jmp	L_ISRHandlers_10
-L_ISRHandlers_9:
-	; >>>>> Line:	22
-	; >>>>> else if(c == 'd') YKEventSet(charEvent,  0x1  |  0x2  |   
-	cmp	byte [bp-1], 100
-	jne	L_ISRHandlers_11
-	; >>>>> Line:	22
-	; >>>>> else if(c == 'd') YKEventSet(charEvent,  0x1  |  0x2  |   
-	mov	ax, 7
-	push	ax
-	push	word [charEvent]
-	call	YKEventSet
-	add	sp, 4
-	jmp	L_ISRHandlers_12
-L_ISRHandlers_11:
-	; >>>>> Line:	23
-	; >>>>> else if(c == '1') YKEventSet(numEvent,  0x1 ); 
-	cmp	byte [bp-1], 49
-	jne	L_ISRHandlers_13
-	; >>>>> Line:	23
-	; >>>>> else if(c == '1') YKEventSet(numEvent,  0x1 ); 
-	mov	ax, 1
-	push	ax
-	push	word [numEvent]
-	call	YKEventSet
-	add	sp, 4
-	jmp	L_ISRHandlers_14
-L_ISRHandlers_13:
-	; >>>>> Line:	24
-	; >>>>> else if(c == 'l') printTaskLists(); 
-	cmp	byte [bp-1], 108
-	jne	L_ISRHandlers_15
-	; >>>>> Line:	24
-	; >>>>> else if(c == 'l') printTaskLists(); 
-	call	printTaskLists
-	jmp	L_ISRHandlers_16
-L_ISRHandlers_15:
-	; >>>>> Line:	25
-	; >>>>> else if(c == 't') YKTickHandler(); 
-	cmp	byte [bp-1], 116
-	jne	L_ISRHandlers_17
-	; >>>>> Line:	25
-	; >>>>> else if(c == 't') YKTickHandler(); 
-	call	YKTickHandler
-	jmp	L_ISRHandlers_18
-L_ISRHandlers_17:
-	; >>>>> Line:	26
-	; >>>>> else if(c == '2') YKEventSet(numEvent,  0x2 ); 
-	cmp	byte [bp-1], 50
-	jne	L_ISRHandlers_19
-	; >>>>> Line:	26
-	; >>>>> else if(c == '2') YKEventSet(numEvent,  0x2 ); 
-	mov	ax, 2
-	push	ax
-	push	word [numEvent]
-	call	YKEventSet
-	add	sp, 4
-	jmp	L_ISRHandlers_20
-L_ISRHandlers_19:
-	; >>>>> Line:	27
-	; >>>>> else if(c == '3') YKEventSet(numEvent,  0x4 ); 
-	cmp	byte [bp-1], 51
-	jne	L_ISRHandlers_21
-	; >>>>> Line:	27
-	; >>>>> else if(c == '3') YKEventSet(numEvent,  0x4 ); 
-	mov	ax, 4
-	push	ax
-	push	word [numEvent]
-	call	YKEventSet
-	add	sp, 4
-	jmp	L_ISRHandlers_22
-L_ISRHandlers_21:
-	; >>>>> Line:	29
-	; >>>>> print("\nKEYPRESS (", 11); 
-	mov	ax, 11
-	push	ax
-	mov	ax, L_ISRHandlers_1
-	push	ax
-	call	print
-	add	sp, 4
-	; >>>>> Line:	30
-	; >>>>> printChar(c); 
-	push	word [bp-1]
-	call	printChar
-	add	sp, 2
-	; >>>>> Line:	31
-	; >>>>> print(") IGNORED\n", 10); 
-	mov	ax, 10
-	push	ax
-	mov	ax, L_ISRHandlers_2
-	push	ax
-	call	print
-	add	sp, 4
-L_ISRHandlers_22:
-L_ISRHandlers_20:
-L_ISRHandlers_18:
-L_ISRHandlers_16:
-L_ISRHandlers_14:
-L_ISRHandlers_12:
-L_ISRHandlers_10:
-L_ISRHandlers_8:
-L_ISRHandlers_6:
 	mov	sp, bp
 	pop	bp
 	ret
-L_ISRHandlers_3:
+L_ISRHandlers_1:
 	push	bp
 	mov	bp, sp
 	push	cx
-	jmp	L_ISRHandlers_4
+	jmp	L_ISRHandlers_2
 	ALIGN	2
 YKTickHandler:
-	; >>>>> Line:	46
+	; >>>>> Line:	36
 	; >>>>> void YKTickHandler(){ 
-	jmp	L_ISRHandlers_24
-L_ISRHandlers_25:
-	; >>>>> Line:	48
+	jmp	L_ISRHandlers_4
+L_ISRHandlers_5:
+	; >>>>> Line:	38
 	; >>>>> ++YKTickNum; 
 	inc	word [YKTickNum]
-	; >>>>> Line:	57
+	; >>>>> Line:	47
 	; >>>>> YKUpdateSuspendedTasks(); 
 	call	YKUpdateSuspendedTasks
 	mov	sp, bp
 	pop	bp
 	ret
-L_ISRHandlers_24:
+L_ISRHandlers_4:
 	push	bp
 	mov	bp, sp
-	jmp	L_ISRHandlers_25
+	jmp	L_ISRHandlers_5
+	ALIGN	2
+STGameOverHandler:
+	; >>>>> Line:	51
+	; >>>>> void STGameOverHandler(){ 
+	jmp	L_ISRHandlers_7
+L_ISRHandlers_8:
+	; >>>>> Line:	53
+	; >>>>> } 
+	mov	sp, bp
+	pop	bp
+	ret
+L_ISRHandlers_7:
+	push	bp
+	mov	bp, sp
+	jmp	L_ISRHandlers_8
+	ALIGN	2
+STNewPieceHandler:
+	; >>>>> Line:	54
+	; >>>>> void STNewPieceHandler(){ 
+	jmp	L_ISRHandlers_10
+L_ISRHandlers_11:
+	; >>>>> Line:	56
+	; >>>>> } 
+	mov	sp, bp
+	pop	bp
+	ret
+L_ISRHandlers_10:
+	push	bp
+	mov	bp, sp
+	jmp	L_ISRHandlers_11
+	ALIGN	2
+STReceivedHandler:
+	; >>>>> Line:	57
+	; >>>>> void STReceivedHandler(){ 
+	jmp	L_ISRHandlers_13
+L_ISRHandlers_14:
+	; >>>>> Line:	59
+	; >>>>> } 
+	mov	sp, bp
+	pop	bp
+	ret
+L_ISRHandlers_13:
+	push	bp
+	mov	bp, sp
+	jmp	L_ISRHandlers_14
+	ALIGN	2
+STTouchdownHandler:
+	; >>>>> Line:	60
+	; >>>>> void STTouchdownHandler(){ 
+	jmp	L_ISRHandlers_16
+L_ISRHandlers_17:
+	; >>>>> Line:	62
+	; >>>>> } 
+	mov	sp, bp
+	pop	bp
+	ret
+L_ISRHandlers_16:
+	push	bp
+	mov	bp, sp
+	jmp	L_ISRHandlers_17

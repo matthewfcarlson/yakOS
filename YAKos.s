@@ -160,4 +160,17 @@ SwitchContext:
 	
 	;This will pop the next three items on the stack: IP, CS, and flags
 	iret
+STGameOver:
+	iret
 	
+STNewPiece:
+	iret
+	
+STReceived:
+	iret
+	
+STTouchdown:
+	iret
+	
+STClear:
+	iret

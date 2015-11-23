@@ -16,7 +16,7 @@ void KeyboardHandler(void){
 	char c;
     c = KeyBuffer;
 
-    if(c == 'a') YKEventSet(charEvent, EVENT_A_KEY);
+    /*if(c == 'a') YKEventSet(charEvent, EVENT_A_KEY);
     else if(c == 'b') YKEventSet(charEvent, EVENT_B_KEY);
     else if(c == 'c') YKEventSet(charEvent, EVENT_C_KEY);
     else if(c == 'd') YKEventSet(charEvent, EVENT_A_KEY | EVENT_B_KEY | EVENT_C_KEY);
@@ -29,17 +29,7 @@ void KeyboardHandler(void){
         print("\nKEYPRESS (", 11);
         printChar(c);
         print(") IGNORED\n", 10);
-    }
-	/*
-	//Commented out for lab6
-	else{
-		printNewLine();  
-		printString("KEYPRESS (");
-		printChar((char) KeyBuffer); 
-		printString(") IGNORED"); 
-		printNewLine();
-	}
-	*/
+    }*/
 }
 
 //Handles the tick ISR
@@ -58,4 +48,15 @@ void YKTickHandler(){
 	
 	
 }
-
+void STGameOverHandler(){
+	
+}
+void STNewPieceHandler(){
+	
+} 
+void STReceivedHandler(){
+	
+}
+void STTouchdownHandler(){
+	
+}
