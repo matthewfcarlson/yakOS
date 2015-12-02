@@ -87,11 +87,23 @@ extern unsigned YKIdleCount;
 
 
 
+extern void printTaskLists();
+
+
 
 int STaskStk[ 512 ];
+int PlayerTaskStk[ 512 ];
+int BrainTaskStk[ 512 ];
 
 
 
+YKSEM *SimptrisReadySemPtr;
+YKSEM * SimptrisPieceSemPtr;
+
+void *CommandQueue[ 8 ];
+YKQ *CommandQPtr;
+
+extern int NewPieceID;
 
 void STask(void)
 {
@@ -108,6 +120,7 @@ void STask(void)
     YKIdleCount = 0;
 	printString("Starting Simptris\n");
 	StartSimptris();
+	YKSemPost(SimptrisReadySemPtr);
     while (1)
     {
         YKDelayTask(20);
@@ -132,6 +145,52 @@ void STask(void)
 }
 
 
+void PlayerTask(){
+	char command =  4 ;
+
+	while(1){
+
+		printTaskLists();
+		YKSemPend(SimptrisReadySemPtr);
+		printString("Waiting for command\n");
+
+		command = (int) YKQPend(CommandQPtr);
+
+		printString("Sending command ");
+		printInt(command);
+		printString("\n");
+
+		switch(command){
+			case  4 :
+				RotatePiece(NewPieceID,1);
+				break;
+			case  3 :
+				RotatePiece(NewPieceID,0);
+				break;
+			case  2 :
+				SlidePiece(NewPieceID,0);
+				break;
+			case  1 :
+				SlidePiece(NewPieceID,1);
+				break;
+		}
+		printString("Command sent\n");
+	}
+}
+
+
+void BrainTask(){
+	while(1){
+
+		YKSemPend(SimptrisPieceSemPtr);
+		printString("Brain is thinking\n");
+		YKQPost(CommandQPtr,(void*) 2 );
+		YKQPost(CommandQPtr,(void*) 2 );
+		YKQPost(CommandQPtr,(void*) 2 );
+	}
+}
+
+
 void main(void)
 {
     YKInitialize();
@@ -139,8 +198,14 @@ void main(void)
 
 
     YKNewTask(STask, (void *) &STaskStk[ 512 ], 0);
+	YKNewTask(PlayerTask, (void *) &PlayerTaskStk[ 512 ], 1);
+	YKNewTask(BrainTask, (void *) &BrainTaskStk[ 512 ], 2);
 
     SeedSimptris(100);
+
+	SimptrisReadySemPtr = YKSemCreate(0);
+	SimptrisPieceSemPtr = YKSemCreate(0);
+	CommandQPtr = YKQCreate(CommandQueue,  8 );
 
     YKRun();
 }

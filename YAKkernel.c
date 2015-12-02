@@ -1,7 +1,7 @@
 #include "YAKkernel.h"
 #include "clib.h"
 #define DEBUG 0
-#define DEBUG_QUEUE 0
+#define DEBUG_QUEUE 1
 #define DEBUG_EVENT 0
 
 /* ----------------- TCB stuff ----------------- */
@@ -519,6 +519,15 @@ void* YKQPend(YKQ *queue){
 	
 }
 
+void YKQClear(YKQ* queue){
+	YKMQ* messQ = (YKMQ*)queue;
+	YKEnterMutex();
+	queue->head = 0;
+	queue->tail = 0;
+	queue->length = 0;
+	YKExitMutex();
+}
+
 /* Posts to a message queue */
 /*		Returns 0 if full, otherwise the length of the queue */
 int YKQPost(YKQ *queue, void *msg){
@@ -556,6 +565,10 @@ int YKQPost(YKQ *queue, void *msg){
 	
 	//Reactivate all the tasks waiting on this queue
 	currTask = messQ->tasks;
+	
+	if (currTask != NULL && YKISRDepth == 0){
+		asm("int 11h");
+	}
 	while (currTask != NULL && currTask != currTask->next){
 		addTask = currTask;
 		currTask = currTask->next;

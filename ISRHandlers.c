@@ -1,12 +1,12 @@
 #include "clib.h"
 #include "YAKkernel.h"
 
-
-extern YKEVENT *charEvent;
-extern YKEVENT *numEvent;
+extern YKSEM* SimptrisReadySemPtr;
+extern YKSEM* SimptrisPieceSemPtr;
 
 extern int KeyBuffer; 
 extern void printTaskLists();
+extern YKQ *CommandQPtr;
 
 extern void YKUpdateSuspendedTasks();
 unsigned YKTickNum = 0;
@@ -55,12 +55,18 @@ void STGameOverHandler(){
 }
 void STNewPieceHandler(){
 	printString("New Piece\n");
-	
+	YKQClear(CommandQPtr);
+	YKSemPost(SimptrisPieceSemPtr);
 } 
 void STReceivedHandler(){
 	printString("Received\n");
+	YKSemPost(SimptrisReadySemPtr);
 }
 void STTouchdownHandler(){
 	printString("Touchdown\n");
+	
+}
+
+void STClearHandler(){
 	
 }

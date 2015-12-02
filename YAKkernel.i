@@ -470,11 +470,20 @@ YKQ* YKQCreate(void **start, unsigned size){
 void* YKQPend(YKQ *queue){
 	void* message;
 	YKMQ* messQ = (YKMQ*)queue;
-#line 468 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+
+
+	printString("Pending on Queue\n");
+	printQueue(messQ);
+
+
 	YKEnterMutex();
 
 	if (messQ->length == 0){
-#line 476 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+
+		printString("Delaying current Task for Queue\n");
+
+
+
 		if (messQ->tasks !=  0 ){
 			printString("\n\nERROR: TWO TASKS ARE WAITING ON THE SAME QUEUE.----------------------\n\n");
 			YKDelayTask(2);
@@ -509,9 +518,25 @@ void* YKQPend(YKQ *queue){
 	++(messQ->head);
 	if (messQ->head == messQ->size )
 		messQ->head = 0;
-#line 518 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+
+
+	printString("Returning Message: 0x");
+	printWord((int)message);
+	printString("\n");
+	YKExitMutex();
+
+
 	return message;
 
+}
+
+void YKQClear(YKQ* queue){
+	YKMQ* messQ = (YKMQ*)queue;
+	YKEnterMutex();
+	queue->head = 0;
+	queue->tail = 0;
+	queue->length = 0;
+	YKExitMutex();
 }
 
 
@@ -523,9 +548,20 @@ int YKQPost(YKQ *queue, void *msg){
 
 
 	YKEnterMutex();
-#line 540 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+
+
+	printQueue(messQ);
+	printString("Adding to queue with ");
+	printInt(messQ->length);
+	printString(" messages.\n");
+
+
+
 	if (messQ->length >= messQ->size){
-#line 545 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+
+		printString("Overflow of Queue\n");
+
+
 		return 0;
 	}
 
@@ -540,6 +576,10 @@ int YKQPost(YKQ *queue, void *msg){
 
 
 	currTask = messQ->tasks;
+
+	if (currTask !=  0  && YKISRDepth == 0){
+		asm("int 11h");
+	}
 	while (currTask !=  0  && currTask != currTask->next){
 		addTask = currTask;
 		currTask = currTask->next;
@@ -570,7 +610,7 @@ unsigned YKEventPend(YKEVENT *eventpointer, unsigned eventMask, int waitMode){
 
 
 	if (!YKEventReadyToUnblock(event,eventMask)){
-#line 593 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
+#line 606 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
 		YKRemoveFromList(YKCurrentTask);
 		if (event->blockedTasks !=  0 )
 			((TCBp)event->blockedTasks)->prev = YKCurrentTask;

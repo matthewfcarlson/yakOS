@@ -83,6 +83,16 @@ L_ISRHandlers_13:
 	push	ax
 	call	printString
 	add	sp, 2
+	; >>>>> Line:	58
+	; >>>>> YKQClear(CommandQPtr); 
+	push	word [CommandQPtr]
+	call	YKQClear
+	add	sp, 2
+	; >>>>> Line:	59
+	; >>>>> YKSemPost(SimptrisPieceSemPtr); 
+	push	word [SimptrisPieceSemPtr]
+	call	YKSemPost
+	add	sp, 2
 	mov	sp, bp
 	pop	bp
 	ret
@@ -94,15 +104,20 @@ L_ISRHandlers_15:
 	DB	"Received",0xA,0
 	ALIGN	2
 STReceivedHandler:
-	; >>>>> Line:	60
+	; >>>>> Line:	61
 	; >>>>> void STReceivedHandler(){ 
 	jmp	L_ISRHandlers_16
 L_ISRHandlers_17:
-	; >>>>> Line:	61
+	; >>>>> Line:	62
 	; >>>>> printString("Received\n"); 
 	mov	ax, L_ISRHandlers_15
 	push	ax
 	call	printString
+	add	sp, 2
+	; >>>>> Line:	63
+	; >>>>> YKSemPost(SimptrisReadySemPtr); 
+	push	word [SimptrisReadySemPtr]
+	call	YKSemPost
 	add	sp, 2
 	mov	sp, bp
 	pop	bp
@@ -115,11 +130,11 @@ L_ISRHandlers_19:
 	DB	"Touchdown",0xA,0
 	ALIGN	2
 STTouchdownHandler:
-	; >>>>> Line:	63
+	; >>>>> Line:	65
 	; >>>>> void STTouchdownHandler(){ 
 	jmp	L_ISRHandlers_20
 L_ISRHandlers_21:
-	; >>>>> Line:	64
+	; >>>>> Line:	66
 	; >>>>> printString("Touchdown\n"); 
 	mov	ax, L_ISRHandlers_19
 	push	ax
@@ -132,3 +147,18 @@ L_ISRHandlers_20:
 	push	bp
 	mov	bp, sp
 	jmp	L_ISRHandlers_21
+	ALIGN	2
+STClearHandler:
+	; >>>>> Line:	70
+	; >>>>> void STClearHandler(){ 
+	jmp	L_ISRHandlers_23
+L_ISRHandlers_24:
+	; >>>>> Line:	72
+	; >>>>> } 
+	mov	sp, bp
+	pop	bp
+	ret
+L_ISRHandlers_23:
+	push	bp
+	mov	bp, sp
+	jmp	L_ISRHandlers_24
