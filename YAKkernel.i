@@ -38,6 +38,7 @@ void YKSemPost(YKSEM *semaphore);
 YKQ* YKQCreate(void **start, unsigned size);
 void* YKQPend(YKQ *queue);
 int YKQPost(YKQ *queue, void *msg);
+void YKQClear(YKQ* queue);
 
 YKEVENT* YKEventCreate(unsigned initialValue);
 unsigned YKEventPend(YKEVENT *event, unsigned eventMask, int waitMode);

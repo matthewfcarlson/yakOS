@@ -82,7 +82,7 @@ L_app_8:
 	jmp	L_app_10
 L_app_9:
 	; >>>>> Line:	49
-	; >>>>> YKDelayTask(2 
+	; >>>>> YKDelayTask(20); 
 	mov	ax, 20
 	push	ax
 	call	YKDelayTask
@@ -180,10 +180,10 @@ L_app_17:
 	jmp	L_app_19
 L_app_18:
 	; >>>>> Line:	76
-	; >>>>> printTaskLists(); 
+	; >>>>> k(){ 
 	call	printTaskLists
 	; >>>>> Line:	77
-	; >>>>> YKSemPend(Si 
+	; >>>>> YKSemPend(SimptrisReadySemPtr); 
 	push	word [SimptrisReadySemPtr]
 	call	YKSemPend
 	add	sp, 2
@@ -298,11 +298,11 @@ BrainTask:
 	jmp	L_app_28
 L_app_29:
 	; >>>>> Line:	106
-	; >>>>> while(1){ 
+	; >>>>> mandQP 
 	jmp	L_app_31
 L_app_30:
 	; >>>>> Line:	108
-	; >>>>> YKSemPend(SimptrisP 
+	; >>>>> YKSemPend(SimptrisPieceSemPtr); 
 	push	word [SimptrisPieceSemPtr]
 	call	YKSemPend
 	add	sp, 2
@@ -403,7 +403,7 @@ L_app_35:
 	add	sp, 2
 	mov	word [SimptrisPieceSemPtr], ax
 	; >>>>> Line:	131
-	; >>>>> CommandQPtr = YKQCreate(CommandQueue 
+	; >>>>> CommandQP 
 	mov	ax, 8
 	push	ax
 	mov	ax, CommandQueue

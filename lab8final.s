@@ -1731,7 +1731,7 @@ L_YAKkernel_4:
 	ALIGN	2
 YKExitMutex:
 	; >>>>> Line:	103
-	; >>>>> void YKExitMutex(){ 
+	; >>>>> ckSP; 
 	jmp	L_YAKkernel_7
 L_YAKkernel_8:
 	; >>>>> Line:	104
@@ -1839,10 +1839,10 @@ L_YAKkernel_24:
 	; >>>>> --newStackSP; 
 	sub	word [bp-4], 2
 	; >>>>> Line:	152
-	; >>>>> --newStackSP; 
+	; >>>>>  
 	sub	word [bp-4], 2
 	; >>>>> Line:	154
-	; >>>>> *(newStackS 
+	; >>>>> *(newStackSP) =  64 ; 
 	mov	si, word [bp-4]
 	mov	word [si], 64
 	; >>>>> Line:	155
@@ -1915,7 +1915,7 @@ L_YAKkernel_24:
 	call	YKAddToReadyList
 	add	sp, 2
 	; >>>>> Line:	181
-	; >>>>> if (YKIsRunning && YKCurrentTask ==   
+	; >>>>> if (YKIsRu 
 	mov	ax, word [YKIsRunning]
 	test	ax, ax
 	je	L_YAKkernel_25
@@ -1998,7 +1998,7 @@ L_YAKkernel_34:
 	; >>>>> ++YKCtxSwCount; 
 	inc	word [YKCtxSwCount]
 	; >>>>> Line:	215
-	; >>>>>  
+	; >>>>> YKDispatcher(); 
 	call	YKDispatcher
 L_YAKkernel_36:
 L_YAKkernel_35:
@@ -2082,11 +2082,11 @@ L_YAKkernel_43:
 	jmp	L_YAKkernel_46
 L_YAKkernel_45:
 	; >>>>> Line:	247
-	; >>>>> while (taskListPtr->next !=  0  && taskListPtr->priority < newPriority){ 
+	; >>>>> while (taskListPtr->next !=  0  && taskListPtr->priority < ne 
 	jmp	L_YAKkernel_48
 L_YAKkernel_47:
 	; >>>>> Line:	248
-	; >>>>> 0 ){ 
+	; >>>>> taskListPtr = taskListPtr->next; 
 	mov	si, word [bp-4]
 	add	si, 8
 	mov	ax, word [si]
@@ -2203,12 +2203,12 @@ YKAddToSuspendedList:
 	jmp	L_YAKkernel_56
 L_YAKkernel_57:
 	; >>>>> Line:	272
-	; >>>>> if (YKSuspendedTasks ==  0 ){ 
+	; >>>>> if (YK 
 	mov	ax, word [YKSuspendedTasks]
 	test	ax, ax
 	jne	L_YAKkernel_58
 	; >>>>> Line:	273
-	; >>>>> task 
+	; >>>>> YKSuspendedTasks = task; 
 	mov	ax, word [bp+4]
 	mov	word [YKSuspendedTasks], ax
 	; >>>>> Line:	274
@@ -2326,7 +2326,7 @@ L_YAKkernel_67:
 	add	si, 10
 	mov	word [si], 0
 	; >>>>> Line:	305
-	; >>>>> layTask( 
+	; >>>>> task->next =  0 ; 
 	mov	si, word [bp+4]
 	add	si, 8
 	mov	word [si], 0
@@ -2418,7 +2418,7 @@ L_YAKkernel_69:
 	ALIGN	2
 YKDelayTask:
 	; >>>>> Line:	343
-	; >>>>> itHub/yakOS/YA 
+	; >>>>> void YKDelayTask(int ticks){ 
 	jmp	L_YAKkernel_77
 L_YAKkernel_78:
 	; >>>>> Line:	344
@@ -2565,7 +2565,7 @@ L_YAKkernel_85:
 	ALIGN	2
 YKSemPost:
 	; >>>>> Line:	409
-	; >>>>> void YKSemPost(YKSEM *semaphore){ 
+	; >>>>> void YKS 
 	jmp	L_YAKkernel_91
 L_YAKkernel_92:
 	; >>>>> Line:	412
@@ -2716,14 +2716,14 @@ YKQPend:
 	jmp	L_YAKkernel_106
 L_YAKkernel_107:
 	; >>>>> Line:	468
-	; >>>>> YKEnterMutex(); 
+	; >>>>> Y 
 	mov	ax, word [bp+4]
 	mov	word [bp-4], ax
 	; >>>>> Line:	468
-	; >>>>> YKEnterMutex(); 
+	; >>>>> Y 
 	call	YKEnterMutex
 	; >>>>> Line:	470
-	; >>>>> if (messQ- 
+	; >>>>> if (messQ->length == 0){ 
 	mov	si, word [bp-4]
 	add	si, 6
 	mov	ax, word [si]
@@ -2779,7 +2779,7 @@ L_YAKkernel_109:
 	jmp	L_YAKkernel_111
 L_YAKkernel_110:
 	; >>>>> Line:	492
-	; >>>>> printString("\n\nERROR: CANNOT SWITCH TASK SINCE IN ISR------------------------\n\n"); 
+	; >>>>> printString("\n\nERROR: CANNOT SWITCH TASK SINCE IN ISR------------------------\n\ 
 	mov	ax, L_YAKkernel_105
 	push	ax
 	call	printString
@@ -2793,7 +2793,7 @@ L_YAKkernel_110:
 L_YAKkernel_111:
 L_YAKkernel_108:
 	; >>>>> Line:	496
-	; >>>>> CBp  
+	; >>>>> YKExitMutex(); 
 	call	YKExitMutex
 	; >>>>> Line:	498
 	; >>>>> YKEnterMutex(); 
@@ -2968,11 +2968,11 @@ L_YAKkernel_122:
 	int 11h
 L_YAKkernel_123:
 	; >>>>> Line:	572
-	; >>>>> while (currTask !=  0  && currTask != currTask->next){ 
+	; >>>>> while (currTask !=  0  && currTask != cu 
 	jmp	L_YAKkernel_125
 L_YAKkernel_124:
 	; >>>>> Line:	573
-	; >>>>> addTask =  
+	; >>>>> addTask = currTask; 
 	mov	ax, word [bp-4]
 	mov	word [bp-6], ax
 	; >>>>> Line:	574
@@ -3139,7 +3139,7 @@ L_YAKkernel_137:
 	call	YKExitMutex
 L_YAKkernel_135:
 	; >>>>> Line:	618
-	; >>>>> return event->events; 
+	; >>>>> retu 
 	mov	si, word [bp-2]
 	mov	ax, word [si]
 L_YAKkernel_138:
@@ -3154,7 +3154,7 @@ L_YAKkernel_133:
 	ALIGN	2
 YKEventReadyToUnblock:
 	; >>>>> Line:	620
-	; >>>>> KIsRunning 
+	; >>>>> int YKEventReadyToUnblock(YKEventGroup* event, unsigned waitCondition){ 
 	jmp	L_YAKkernel_140
 L_YAKkernel_141:
 	; >>>>> Line:	624
@@ -3215,13 +3215,13 @@ YKEventSet:
 	jmp	L_YAKkernel_149
 L_YAKkernel_150:
 	; >>>>> Line:	644
-	; >>>>> if (eventpointer ==  0  || !YKIsRunning 
+	; >>>>> if (eventpoi 
 	mov	word [bp-4], 0
 	mov	word [bp-6], 0
 	mov	ax, word [bp+4]
 	mov	word [bp-8], ax
 	; >>>>> Line:	644
-	; >>>>> if (eventpointer ==  0  || !YKIsRunning 
+	; >>>>> if (eventpoi 
 	mov	ax, word [bp+4]
 	test	ax, ax
 	je	L_YAKkernel_152
@@ -3325,7 +3325,7 @@ L_YAKkernel_156:
 	int 11h
 L_YAKkernel_159:
 	; >>>>> Line:	671
-	; >>>>> YKExitMutex(); 
+	; >>>>>  
 	call	YKExitMutex
 L_YAKkernel_153:
 	mov	sp, bp
@@ -3339,7 +3339,7 @@ L_YAKkernel_149:
 	ALIGN	2
 YKEventReset:
 	; >>>>> Line:	674
-	; >>>>> asks); 
+	; >>>>> void YKEventReset(YKEVENT *eventpointer, unsigned eventMask){ 
 	jmp	L_YAKkernel_161
 L_YAKkernel_162:
 	; >>>>> Line:	676
@@ -3467,14 +3467,14 @@ L_YAKkernel_176:
 	call	printString
 	add	sp, 2
 	; >>>>> Line:	698
-	; >>>>> printTCB(queue->tasks); 
+	; >>>>>  
 	mov	si, word [bp+4]
 	add	si, 10
 	push	word [si]
 	call	printTCB
 	add	sp, 2
 	; >>>>> Line:	699
-	; >>>>> pr 
+	; >>>>> printString("Contents: ["); 
 	mov	ax, L_YAKkernel_172
 	push	ax
 	call	printString
@@ -3630,7 +3630,7 @@ L_YAKkernel_191:
 	jmp	L_YAKkernel_194
 L_YAKkernel_193:
 	; >>>>> Line:	728
-	; >>>>> printString(" \ 
+	; >>>>> printString(" \n"); 
 	mov	ax, L_YAKkernel_188
 	push	ax
 	call	printString
@@ -3841,7 +3841,7 @@ L_app_8:
 	jmp	L_app_10
 L_app_9:
 	; >>>>> Line:	49
-	; >>>>> YKDelayTask(2 
+	; >>>>> YKDelayTask(20); 
 	mov	ax, 20
 	push	ax
 	call	YKDelayTask
@@ -3939,10 +3939,10 @@ L_app_17:
 	jmp	L_app_19
 L_app_18:
 	; >>>>> Line:	76
-	; >>>>> printTaskLists(); 
+	; >>>>> k(){ 
 	call	printTaskLists
 	; >>>>> Line:	77
-	; >>>>> YKSemPend(Si 
+	; >>>>> YKSemPend(SimptrisReadySemPtr); 
 	push	word [SimptrisReadySemPtr]
 	call	YKSemPend
 	add	sp, 2
@@ -4057,11 +4057,11 @@ BrainTask:
 	jmp	L_app_28
 L_app_29:
 	; >>>>> Line:	106
-	; >>>>> while(1){ 
+	; >>>>> mandQP 
 	jmp	L_app_31
 L_app_30:
 	; >>>>> Line:	108
-	; >>>>> YKSemPend(SimptrisP 
+	; >>>>> YKSemPend(SimptrisPieceSemPtr); 
 	push	word [SimptrisPieceSemPtr]
 	call	YKSemPend
 	add	sp, 2
@@ -4162,7 +4162,7 @@ L_app_35:
 	add	sp, 2
 	mov	word [SimptrisPieceSemPtr], ax
 	; >>>>> Line:	131
-	; >>>>> CommandQPtr = YKQCreate(CommandQueue 
+	; >>>>> CommandQP 
 	mov	ax, 8
 	push	ax
 	mov	ax, CommandQueue
