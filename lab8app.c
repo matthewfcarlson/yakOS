@@ -73,7 +73,7 @@ void PlayerTask(){
 	
 	while(1){
 		//wait for received
-		printTaskLists();
+		//printTaskLists();
 		YKSemPend(SimptrisReadySemPtr);
 		printString("Waiting for command\n");
 		//wait for command queue
