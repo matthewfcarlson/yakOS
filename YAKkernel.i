@@ -470,20 +470,11 @@ YKQ* YKQCreate(void **start, unsigned size){
 void* YKQPend(YKQ *queue){
 	void* message;
 	YKMQ* messQ = (YKMQ*)queue;
-
-
-	printString("Pending on Queue\n");
-	printQueue(messQ);
-
-
+#line 468 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
 	YKEnterMutex();
 
 	if (messQ->length == 0){
-
-		printString("Delaying current Task for Queue\n");
-
-
-
+#line 476 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
 		if (messQ->tasks !=  0 ){
 			printString("\n\nERROR: TWO TASKS ARE WAITING ON THE SAME QUEUE.----------------------\n\n");
 			YKDelayTask(2);
@@ -518,14 +509,7 @@ void* YKQPend(YKQ *queue){
 	++(messQ->head);
 	if (messQ->head == messQ->size )
 		messQ->head = 0;
-
-
-	printString("Returning Message: 0x");
-	printWord((int)message);
-	printString("\n");
-	YKExitMutex();
-
-
+#line 518 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
 	return message;
 
 }
@@ -533,9 +517,9 @@ void* YKQPend(YKQ *queue){
 void YKQClear(YKQ* queue){
 	YKMQ* messQ = (YKMQ*)queue;
 	YKEnterMutex();
-	queue->head = 0;
-	queue->tail = 0;
-	queue->length = 0;
+	messQ->head = 0;
+	messQ->tail = 0;
+	messQ->length = 0;
 	YKExitMutex();
 }
 
@@ -548,20 +532,9 @@ int YKQPost(YKQ *queue, void *msg){
 
 
 	YKEnterMutex();
-
-
-	printQueue(messQ);
-	printString("Adding to queue with ");
-	printInt(messQ->length);
-	printString(" messages.\n");
-
-
-
+#line 549 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
 	if (messQ->length >= messQ->size){
-
-		printString("Overflow of Queue\n");
-
-
+#line 554 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/YAKkernel.c"
 		return 0;
 	}
 

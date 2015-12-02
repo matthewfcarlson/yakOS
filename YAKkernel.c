@@ -1,7 +1,7 @@
 #include "YAKkernel.h"
 #include "clib.h"
 #define DEBUG 0
-#define DEBUG_QUEUE 1
+#define DEBUG_QUEUE 0
 #define DEBUG_EVENT 0
 
 /* ----------------- TCB stuff ----------------- */
@@ -522,9 +522,9 @@ void* YKQPend(YKQ *queue){
 void YKQClear(YKQ* queue){
 	YKMQ* messQ = (YKMQ*)queue;
 	YKEnterMutex();
-	queue->head = 0;
-	queue->tail = 0;
-	queue->length = 0;
+	messQ->head = 0;
+	messQ->tail = 0;
+	messQ->length = 0;
 	YKExitMutex();
 }
 
