@@ -27,7 +27,7 @@ L_app_8:
 	call	YKDelayTask
 	add	sp, 2
 	; >>>>> Line:	25
-	; >>>>> printString("Welcome to the Y 
+	; >>>>> printString("Welcome to the YA 
 	mov	ax, L_app_1
 	push	ax
 	call	printString
@@ -114,7 +114,7 @@ L_app_9:
 	call	printString
 	add	sp, 2
 	; >>>>> Line:	46
-	; >>>>> tmp = (int)  
+	; >>>>> tmp = (int) ( 
 	mov	ax, word [bp-6]
 	xor	dx, dx
 	div	word [bp-2]
@@ -174,7 +174,13 @@ L_app_14:
 	push	ax
 	call	YKNewTask
 	add	sp, 6
-	; >>>>> Line:	67
+	; >>>>> Line:	66
+	; >>>>> SeedSimptris(100); 
+	mov	ax, 100
+	push	ax
+	call	SeedSimptris
+	add	sp, 2
+	; >>>>> Line:	68
 	; >>>>> YKRun(); 
 	call	YKRun
 	mov	sp, bp

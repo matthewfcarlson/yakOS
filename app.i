@@ -31,7 +31,7 @@ void signalEOI(void);
 
 void SlidePiece(int ID, int direction);
 void RotatePiece(int ID, int direction);
-void SeedSimptris(long seed);
+void SeedSimptris(int seed);
 void StartSimptris(void);
 #line 8 "C:/Users/matthewfcarlson/Documents/GitHub/yakOS/lab8app.c"
 #line 1 "YAKkernel.h"
@@ -140,6 +140,7 @@ void main(void)
 
     YKNewTask(STask, (void *) &STaskStk[ 512 ], 0);
 
+    SeedSimptris(100);
 
     YKRun();
 }

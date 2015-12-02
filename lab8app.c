@@ -63,7 +63,7 @@ void main(void)
     //numEvent = YKEventCreate(0);
     YKNewTask(STask, (void *) &STaskStk[TASK_STACK_SIZE], 0);
 	
-    SeedSimptris(1234);
+    SeedSimptris(100);
 	
     YKRun();
 }

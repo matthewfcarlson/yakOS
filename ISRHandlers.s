@@ -42,59 +42,68 @@ L_ISRHandlers_4:
 	push	bp
 	mov	bp, sp
 	jmp	L_ISRHandlers_5
+L_ISRHandlers_7:
+	DB	0xA,0xA,"GAME OVER",0xA,0
 	ALIGN	2
 STGameOverHandler:
 	; >>>>> Line:	51
 	; >>>>> void STGameOverHandler(){ 
-	jmp	L_ISRHandlers_7
-L_ISRHandlers_8:
+	jmp	L_ISRHandlers_8
+L_ISRHandlers_9:
+	; >>>>> Line:	52
+	; >>>>> printString("\n\nGAME OVER\n"); 
+	mov	ax, L_ISRHandlers_7
+	push	ax
+	call	printString
+	add	sp, 2
 	; >>>>> Line:	53
-	; >>>>> } 
+	; >>>>> exit(2); 
+	mov	al, 2
+	push	ax
+	call	exit
+	add	sp, 2
 	mov	sp, bp
 	pop	bp
 	ret
-L_ISRHandlers_7:
+L_ISRHandlers_8:
 	push	bp
 	mov	bp, sp
-	jmp	L_ISRHandlers_8
+	jmp	L_ISRHandlers_9
+L_ISRHandlers_11:
+	DB	"New Piece",0xA,0
 	ALIGN	2
 STNewPieceHandler:
-	; >>>>> Line:	54
-	; >>>>> void STNewPieceHandler(){ 
-	jmp	L_ISRHandlers_10
-L_ISRHandlers_11:
 	; >>>>> Line:	56
-	; >>>>> } 
+	; >>>>> void STNewPieceHandler(){ 
+	jmp	L_ISRHandlers_12
+L_ISRHandlers_13:
+	; >>>>> Line:	57
+	; >>>>> printString("New Piece\n"); 
+	mov	ax, L_ISRHandlers_11
+	push	ax
+	call	printString
+	add	sp, 2
 	mov	sp, bp
 	pop	bp
 	ret
-L_ISRHandlers_10:
+L_ISRHandlers_12:
 	push	bp
 	mov	bp, sp
-	jmp	L_ISRHandlers_11
+	jmp	L_ISRHandlers_13
+L_ISRHandlers_15:
+	DB	"Received",0xA,0
 	ALIGN	2
 STReceivedHandler:
-	; >>>>> Line:	57
-	; >>>>> void STReceivedHandler(){ 
-	jmp	L_ISRHandlers_13
-L_ISRHandlers_14:
-	; >>>>> Line:	59
-	; >>>>> } 
-	mov	sp, bp
-	pop	bp
-	ret
-L_ISRHandlers_13:
-	push	bp
-	mov	bp, sp
-	jmp	L_ISRHandlers_14
-	ALIGN	2
-STTouchdownHandler:
 	; >>>>> Line:	60
-	; >>>>> void STTouchdownHandler(){ 
+	; >>>>> void STReceivedHandler(){ 
 	jmp	L_ISRHandlers_16
 L_ISRHandlers_17:
-	; >>>>> Line:	62
-	; >>>>> } 
+	; >>>>> Line:	61
+	; >>>>> printString("Received\n"); 
+	mov	ax, L_ISRHandlers_15
+	push	ax
+	call	printString
+	add	sp, 2
 	mov	sp, bp
 	pop	bp
 	ret
@@ -102,3 +111,24 @@ L_ISRHandlers_16:
 	push	bp
 	mov	bp, sp
 	jmp	L_ISRHandlers_17
+L_ISRHandlers_19:
+	DB	"Touchdown",0xA,0
+	ALIGN	2
+STTouchdownHandler:
+	; >>>>> Line:	63
+	; >>>>> void STTouchdownHandler(){ 
+	jmp	L_ISRHandlers_20
+L_ISRHandlers_21:
+	; >>>>> Line:	64
+	; >>>>> printString("Touchdown\n"); 
+	mov	ax, L_ISRHandlers_19
+	push	ax
+	call	printString
+	add	sp, 2
+	mov	sp, bp
+	pop	bp
+	ret
+L_ISRHandlers_20:
+	push	bp
+	mov	bp, sp
+	jmp	L_ISRHandlers_21

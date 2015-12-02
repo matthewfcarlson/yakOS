@@ -161,16 +161,166 @@ SwitchContext:
 	;This will pop the next three items on the stack: IP, CS, and flags
 	iret
 STGameOver:
+	cli
+	push ax
+	push bx
+	push dx
+	push si
+	push di
+	push bp
+	push es
+	push ds
+
+	call YKEnterISR
+	sti
+	
+	call STGameOverHandler
+
+	cli
+	mov	al, 0x20		; Load nonspecific EOI value (0x20) into register al
+	out	0x20, al		; Write EOI to PIC (port 0x20)
+	call YKExitISR
+	
+	pop ds
+	pop es
+	pop bp
+	pop di
+	pop si
+	pop dx
+	pop bx
+	pop ax
+	sti
+	
 	iret
 	
 STNewPiece:
+	cli
+	push ax
+	push bx
+	push dx
+	push si
+	push di
+	push bp
+	push es
+	push ds
+
+	call YKEnterISR
+	sti
+	
+	call STNewPieceHandler
+
+	cli
+	mov	al, 0x20		; Load nonspecific EOI value (0x20) into register al
+	out	0x20, al		; Write EOI to PIC (port 0x20)
+	call YKExitISR
+	
+	pop ds
+	pop es
+	pop bp
+	pop di
+	pop si
+	pop dx
+	pop bx
+	pop ax
+	sti
+	
 	iret
 	
 STReceived:
+	cli
+	push ax
+	push bx
+	push dx
+	push si
+	push di
+	push bp
+	push es
+	push ds
+
+	call YKEnterISR
+	sti
+	
+	call STReceivedHandler
+
+	cli
+	mov	al, 0x20		; Load nonspecific EOI value (0x20) into register al
+	out	0x20, al		; Write EOI to PIC (port 0x20)
+	call YKExitISR
+	
+	pop ds
+	pop es
+	pop bp
+	pop di
+	pop si
+	pop dx
+	pop bx
+	pop ax
+	sti
+	
 	iret
 	
 STTouchdown:
+	cli
+	push ax
+	push bx
+	push dx
+	push si
+	push di
+	push bp
+	push es
+	push ds
+
+	call YKEnterISR
+	sti
+	
+	call STTouchdownHandler
+
+	cli
+	mov	al, 0x20		; Load nonspecific EOI value (0x20) into register al
+	out	0x20, al		; Write EOI to PIC (port 0x20)
+	call YKExitISR
+	
+	pop ds
+	pop es
+	pop bp
+	pop di
+	pop si
+	pop dx
+	pop bx
+	pop ax
+	sti
+	
 	iret
 	
 STClear:
+	cli
+	push ax
+	push bx
+	push dx
+	push si
+	push di
+	push bp
+	push es
+	push ds
+
+	call YKEnterISR
+	sti
+	
+	;call STClearHandler
+
+	cli
+	mov	al, 0x20		; Load nonspecific EOI value (0x20) into register al
+	out	0x20, al		; Write EOI to PIC (port 0x20)
+	call YKExitISR
+	
+	pop ds
+	pop es
+	pop bp
+	pop di
+	pop si
+	pop dx
+	pop bx
+	pop ax
+	sti
+	
 	iret

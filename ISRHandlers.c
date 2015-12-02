@@ -49,14 +49,18 @@ void YKTickHandler(){
 	
 }
 void STGameOverHandler(){
+	printString("\n\nGAME OVER\n");
+	exit(2);
 	
 }
 void STNewPieceHandler(){
+	printString("New Piece\n");
 	
 } 
 void STReceivedHandler(){
-	
+	printString("Received\n");
 }
 void STTouchdownHandler(){
+	printString("Touchdown\n");
 	
 }
