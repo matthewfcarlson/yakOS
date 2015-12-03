@@ -9,6 +9,7 @@ Description: Application code for EE 425 lab 8 (tetris)
 
 #define TASK_STACK_SIZE   512         /* stack size in words */
 #define COMMANDQUEUESIZE 8
+#define DEBUG_SIMPTRIS 0
 
 extern void printTaskLists();
 
@@ -75,13 +76,19 @@ void PlayerTask(){
 		//wait for received
 		//printTaskLists();
 		YKSemPend(SimptrisReadySemPtr);
+		#if DEBUG_SIMPTRIS == 1
 		printString("Waiting for command\n");
+		#endif
 		//wait for command queue
 		command = (int) YKQPend(CommandQPtr); /* get next msg */
 		//update block ID
+		#if DEBUG_SIMPTRIS == 1 || 1==1
 		printString("Sending command ");
 		printInt(command);
+		printString(" for block ");
+		printInt(NewPieceID);
 		printString("\n");
+		#endif
 		//execute command
 		switch(command){
 			case ROTATE_RIGHT:
@@ -97,7 +104,9 @@ void PlayerTask(){
 				SlidePiece(NewPieceID,1);
 				break;
 		}
+		#if DEBUG_SIMPTRIS == 1
 		printString("Command sent\n");
+		#endif
 	}
 } 
 
@@ -106,10 +115,10 @@ void BrainTask(){
 	while(1){
 		//wait for a new piece
 		YKSemPend(SimptrisPieceSemPtr);
+		#if DEBUG_SIMPTRIS == 1
 		printString("Brain is thinking\n");
-		YKQPost(CommandQPtr,(void*)SLIDE_LEFT);
-		YKQPost(CommandQPtr,(void*)SLIDE_LEFT);
-		YKQPost(CommandQPtr,(void*)SLIDE_LEFT);
+		#endif
+		YKQPost(CommandQPtr,(void*)ROTATE_RIGHT);
 	}
 }
 
