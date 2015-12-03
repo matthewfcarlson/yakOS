@@ -66,8 +66,7 @@ KeyboardISR:
 	
 	mov	ax, word [YKISRDepth]
 	test	ax, ax
-	jne KeyboardISRSaved
-						;save the SP on the TCB since we are call depth zero
+	jne KeyboardISRSaved ;save the SP on the TCB since we are call depth zero
 	mov si, word [YKCurrentTask]
 	mov [si],sp			;move sp (the first variable) to the TCB
 	KeyboardISRSaved:
@@ -203,6 +202,13 @@ STNewPiece:
 	push bp
 	push es
 	push ds
+	
+	mov	ax, word [YKISRDepth]
+	test	ax, ax
+	jne STNewPieceISRSaved	;save the SP on the TCB since we are call depth zero
+	mov si, word [YKCurrentTask]
+	mov [si],sp				;move sp (the first variable) to the TCB
+	STNewPieceISRSaved:
 
 	call YKEnterISR
 	sti
@@ -236,6 +242,13 @@ STReceived:
 	push bp
 	push es
 	push ds
+	
+	mov	ax, word [YKISRDepth]
+	test	ax, ax
+	jne STRecievedISRSaved	;save the SP on the TCB since we are call depth zero
+	mov si, word [YKCurrentTask]
+	mov [si],sp				;move sp (the first variable) to the TCB
+	STRecievedISRSaved:
 
 	call YKEnterISR
 	sti
@@ -269,6 +282,13 @@ STTouchdown:
 	push bp
 	push es
 	push ds
+	
+	mov	ax, word [YKISRDepth]
+	test	ax, ax
+	jne STTouchdownISRSaved	;save the SP on the TCB since we are call depth zero
+	mov si, word [YKCurrentTask]
+	mov [si],sp				;move sp (the first variable) to the TCB
+	STTouchdownISRSaved:
 
 	call YKEnterISR
 	sti
@@ -293,6 +313,12 @@ STTouchdown:
 	iret
 	
 STClear:
+	push ax
+	mov	al, 0x20		; Load nonspecific EOI value (0x20) into register al
+	out	0x20, al		; Write EOI to PIC (port 0x20)
+	pop ax
+	reti
+	
 	cli
 	push ax
 	push bx
@@ -302,6 +328,14 @@ STClear:
 	push bp
 	push es
 	push ds
+	
+	mov	ax, word [YKISRDepth]
+	test	ax, ax
+	jne STClearISRSaved	;save the SP on the TCB since we are call depth zero
+	mov si, word [YKCurrentTask]
+	mov [si],sp				;move sp (the first variable) to the TCB
+	
+	STClearISRSaved:
 
 	call YKEnterISR
 	sti
