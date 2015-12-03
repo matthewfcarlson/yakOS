@@ -8,7 +8,7 @@ Description: Application code for EE 425 lab 8 (tetris)
 #include "YAKkernel.h"
 
 #define TASK_STACK_SIZE   512         /* stack size in words */
-#define COMMANDQUEUESIZE 8
+#define COMMANDQUEUESIZE 25
 #define DEBUG_SIMPTRIS 0
 
 extern void printTaskLists();
@@ -85,6 +85,8 @@ void STask(void)           /* tracks statistics */
 //The thumbs which play the game, taking commands from the brain and sending it to tetris
 void PlayerTask(){
 	char command = ROTATE_RIGHT;
+	unsigned rawCommand;
+	unsigned pieceID;
 	
 	while(1){
 		//wait for received
@@ -93,30 +95,37 @@ void PlayerTask(){
 		#if DEBUG_SIMPTRIS == 1
 		printString("Waiting for command\n");
 		#endif
-		//wait for command queue
-		command = (int) YKQPend(CommandQPtr); /* get next msg */
-		//update block ID
+		
+		rawCommand = (unsigned) YKQPend(CommandQPtr); /* get next msg */\
+		pieceID = rawCommand & (0x0FFF);
+		command = rawCommand >> 12;
+
 		#if DEBUG_SIMPTRIS == 1
+		
 		printString("Sending command ");
+		printWord(rawCommand);
+		printString(" Command:");
 		printInt(command);
 		printString(" for block ");
-		printInt(NewPieceID);
+		printInt(pieceID);
 		printString("\n");
 		#endif
 		//execute command
 		switch(command){
 			case ROTATE_RIGHT:
-				RotatePiece(NewPieceID,1);
+				RotatePiece(pieceID,1);
 				break;
 			case ROTATE_LEFT:
-				RotatePiece(NewPieceID,0);
+				RotatePiece(pieceID,0);
 				break;
 			case SLIDE_LEFT:
-				SlidePiece(NewPieceID,0);
+				SlidePiece(pieceID,0);
 				break;
 			case SLIDE_RIGHT:
-				SlidePiece(NewPieceID,1);
+				SlidePiece(pieceID,1);
 				break;
+			default:
+				printString("-----UNKNWON COMMAND----\n");
 		}
 		#if DEBUG_SIMPTRIS == 1
 		printString("Command sent\n");
@@ -132,6 +141,8 @@ int desiredColumn = 0;
 int desiredRotation = 0;
 int currentColumn = 0;
 int currentRotation = 0;
+int currentPieceID = 0;
+void BrainCommand(int commd);
 
 
 //Makes all movement decisions and puts them in the queue
@@ -140,7 +151,7 @@ void BrainTask(){
 	while(1){
 		//wait for a new piece
 		YKSemPend(SimptrisPieceSemPtr);
-		#if DEBUG_SIMPTRIS == 1 || 1==1
+		#if DEBUG_SIMPTRIS == 1
 		printString("Brain is thinking about new ");
 		printInt(NewPieceType);
 		printString(" piece.  Side1:");
@@ -157,6 +168,7 @@ void BrainTask(){
 		
 		currentColumn   = NewPieceColumn + 1;
 		currentRotation = NewPieceOrientation;
+		currentPieceID  = NewPieceID;
 		
 		switch(NewPieceType){
 			case 0: //corner piece						
@@ -245,6 +257,7 @@ void BrainTask(){
 				}
 				break;
 		}
+		#if DEBUG_SIMPTRIS == 1
 		printString("Moving to:");
 		printInt(desiredColumn);
 		printString(" from:");
@@ -253,13 +266,16 @@ void BrainTask(){
 		printInt(desiredRotation);
 		printString(" from:");
 		printInt(currentRotation);
-
+		#endif
 
 		while (BrainRotateTo());
-		printString("...");	
 		while (BrainMoveTo());
-		printString("Done");
+		
+		#if DEBUG_SIMPTRIS == 1
 		printNewLine();
+		#endif
+
+		
 		
 	}
 }
@@ -268,12 +284,12 @@ void BrainTask(){
 int BrainMoveTo(){
 	if (desiredColumn > currentColumn){
 		//printString("Slide Right\n");
-		YKQPost(CommandQPtr,(void*)SLIDE_RIGHT);
+		BrainCommand(SLIDE_RIGHT);
 		++currentColumn;
 	} 
 	else if (desiredColumn < currentColumn){
 		//printString("Slide Left\n");
-		YKQPost(CommandQPtr,(void*)SLIDE_LEFT);
+		BrainCommand(SLIDE_LEFT);
 		--currentColumn;
 	} 
 
@@ -288,7 +304,7 @@ int BrainRotateTo(){
 		else{
 			//move right once
 			printString("Moving right for proper rotation\n");
-			YKQPost(CommandQPtr,(void*)SLIDE_RIGHT);
+			BrainCommand(SLIDE_RIGHT);
 			currentColumn = 2;
 		}
 	}
@@ -299,33 +315,43 @@ int BrainRotateTo(){
 		else{
 			//move left once
 			printString("Moving left for proper rotation\n");
-			YKQPost(CommandQPtr,(void*)SLIDE_LEFT);
+			BrainCommand(SLIDE_LEFT);
 			currentColumn = 5;
 		}
 	}
 
 	if (desiredRotation == 3 && currentRotation == 0){
 		//printString("Rotate Right\n");
-		YKQPost(CommandQPtr,(void*)ROTATE_RIGHT);		
+		BrainCommand(ROTATE_RIGHT);		
 		currentRotation = 3;
 	}
 	else if (desiredRotation == 0 && currentRotation == 3){
 		//printString("Rotate Left\n");
-		YKQPost(CommandQPtr,(void*)ROTATE_LEFT);
+		BrainCommand(ROTATE_LEFT);
 		currentRotation = 0;
 	}
 	else if (desiredRotation < currentRotation){
 		//printString("Rotate RIGHT\n");
-		YKQPost(CommandQPtr,(void*)ROTATE_RIGHT);
+		BrainCommand(ROTATE_RIGHT);
 		++desiredRotation;
 	}
 	else if (desiredRotation > currentRotation){
 		//printString("Rotate LEFT\n");
-		YKQPost(CommandQPtr,(void*)ROTATE_LEFT);
+		BrainCommand(ROTATE_LEFT);
 		--desiredRotation;
 	}
 	
 	return currentRotation != desiredRotation;
+}
+void BrainCommand(int command){
+	unsigned messageQCommand = (command << 12) | (currentPieceID);
+	#if DEBUG_SIMPTRIS == 1
+	printString("Queueing command: 0x");
+	printWord(messageQCommand);
+	printNewLine();
+	#endif
+	YKQPost(CommandQPtr,(void*)messageQCommand);
+
 }
 
 
@@ -340,7 +366,7 @@ void main(void)
 	YKNewTask(PlayerTask, (void *) &PlayerTaskStk[TASK_STACK_SIZE], 1);
 	YKNewTask(BrainTask, (void *) &BrainTaskStk[TASK_STACK_SIZE], 2);
 	
-    SeedSimptris(100);
+    SeedSimptris(10947);
 	
 	SimptrisReadySemPtr = YKSemCreate(0);
 	SimptrisPieceSemPtr = YKSemCreate(0);
